@@ -1,0 +1,97 @@
+# ==============================================================================
+# .gitignore for EPmigrants
+# ==============================================================================
+
+# Raw data and data (symlinked to mounted OneDrive folder; README lives in mount target)
+data_raw/
+data/
+data_raw - collegamento.lnk
+
+# Processed intermediates (regenerable from raw data via pipeline)
+data_processed/
+
+# Rendered explorations (recursive for subfolders)
+explorations/**/*.html
+explorations/**/*_files/
+
+# Rendered presentations (recursive for subfolders)
+slides/**/*.html
+slides/**/*_files/
+
+# Rendered papers (recursive for subfolders)
+manuscript/**/*.pdf
+manuscript/**/*.html
+manuscript/**/*_files/
+# Note: .tex support files (my_header.tex, _authors.tex) are tracked — only rendered .tex is excluded via output/
+
+# Heavy data intermediates
+*.rds
+*.RDS
+
+# Dropbox metadata
+*:com.dropbox.attrs
+
+# Quarto cache
+_site/
+_freeze/
+/.quarto/
+
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.nav
+*.out
+*.snm
+*.toc
+*.vrb
+*.synctex.gz
+*.run.xml
+*-blx.bib
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# R
+.Rproj.user/
+.Rhistory
+.RData
+.Rdata
+Rplots.pdf
+
+# Output (regenerable by pipeline)
+output/
+!output/.gitkeep
+!output/**/
+!output/**/.gitkeep
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Claude Code local files (not shared across machines)
+.claude/settings.local.json
+.claude/state/
+CLAUDE.local.md
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# VS Code workspace files
+*.code-workspace
+
+# Imported legacy project files (temporary, not tracked)
+project_import/
+
+
+
+
