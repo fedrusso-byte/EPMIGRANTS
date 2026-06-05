@@ -16,7 +16,7 @@
 library(tidyverse)
 library(here)
 
-source(here("scripts", "R", "utils", "cap_issue_mapping.R"))
+source(here("scripts", "utils", "cap_issue_mapping.R"))
 
 dir.create(here("output"), showWarnings = FALSE, recursive = TRUE)
 dir.create(here("output", "figures"), showWarnings = FALSE, recursive = TRUE)

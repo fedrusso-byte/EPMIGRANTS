@@ -2,6 +2,28 @@
 # download_problem_indicators.R — Versione Semplificata (Senza Gini)
 # ==============================================================================
 
+if (!requireNamespace("eurostat", quietly = TRUE)) {
+  install.packages("eurostat")
+}
+
+if (!requireNamespace("WDI", quietly = TRUE)) {
+  install.packages("WDI")
+}
+
+if (!requireNamespace("countrycode", quietly = TRUE)) {
+  install.packages("countrycode")
+}
+
+if (!requireNamespace("janitor", quietly = TRUE)) {
+  install.packages("janitor")
+}
+
+if (!requireNamespace("zoo", quietly = TRUE)) {
+  install.packages("zoo")
+}
+
+
+
 library(here)
 library(tidyverse)
 library(eurostat)

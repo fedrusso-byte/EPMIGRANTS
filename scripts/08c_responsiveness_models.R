@@ -14,6 +14,15 @@
 # This allows the script to run within WSL memory constraints (~2-3 GB).
 
 # 0. Setup ====================================================================
+
+if (!requireNamespace("DHARMa", quietly = TRUE)) {
+  install.packages("DHARMa")
+}
+
+
+library(here)
+
+
 library(tidyverse)
 library(glmmTMB)
 library(marginaleffects)
