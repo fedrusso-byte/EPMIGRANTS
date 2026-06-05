@@ -55,3 +55,6 @@ stopifnot(
 message("  Writing ", nrow(epq), " questions to data_processed/")
 write_csv(epq, here("data_processed", "epq.csv"))
 write_rds(epq, here("data_processed", "epq.rds"))
+
+# Step 2: Remove intermediate df to free memory
+rm(df)
