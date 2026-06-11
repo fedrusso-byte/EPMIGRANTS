@@ -51,11 +51,49 @@ country_classification <- tribble(
   )
 
 
+# NUOVO: Inserimento dati time-invariant estratti dal file claimmakingpressure.csv
+message("  Adding discrimination and CMP time-invariant data...")
+country_features <- tribble(
+  ~country_name,     ~discrimination_mean, ~cmp_mean,
+  "Austria",         25.45,                10.42,
+  "Belgium",         17.12,                7.83,
+  "Bulgaria",        8.71,                 2.25,
+  "Cyprus",          16.82,                8.44,
+  "Czechia",         22.29,                1.35,
+  "Germany",         23.69,                11.18,
+  "Denmark",         19.91,                10.96,
+  "Estonia",         18.02,                6.08,
+  "Spain",           16.74,                7.14,
+  "Finland",         19.56,                11.55,
+  "France",          27.27,                13.03,
+  "United Kingdom",  22.16,                14.91,
+  "Greece",          46.24,                7.65,
+  "Croatia",         4.70,                 1.42,
+  "Hungary",         4.27,                 NA, # Gestione n.a.
+  "Ireland",         13.36,                4.77,
+  "Italy",           26.73,                5.72,
+  "Lithuania",       8.15,                 5.75,
+  "Latvia",          26.45,                9.73,
+  "Netherlands",     29.89,                15.11,
+  "Poland",          10.11,                4.02,
+  "Portugal",        21.16,                5.59,
+  "Sweden",          18.59,                12.38,
+  "Slovenia",        6.26,                 3.12,
+  "Slovakia",        9.10,                 NA  # Gestione n.a.
+)
+
+# Uniamo i nuovi dati strutturali alla classificazione di base dei paesi
+# I paesi mancanti nel file (es. Lussemburgo, Malta, Romania) riceveranno automaticamente NA
+country_classification <- country_classification |> 
+  left_join(country_features, by = "country_name")
+
+
+
 ############################ Time-varying data ###################################
 
 # Create base panel
 year_panel <- crossing(
-  year = 1994:2024,
+  year = 2004:2024,
   country = country_classification$country
 ) |> 
   left_join(country_classification, by = "country")
@@ -377,8 +415,6 @@ saveRDS(year_panel, here("output", "country_panel.rds"))
 # Define term starts
 legislature_starts <- tribble(
   ~legislative_term, ~term_start,
-  "4th", ymd("1994-07-19"),
-  "5th", ymd("1999-07-20"),
   "6th", ymd("2004-07-20"),
   "7th", ymd("2009-07-14"),
   "8th", ymd("2014-07-01"),
@@ -439,7 +475,7 @@ saveRDS(country_parl_year_panel, here("output", "country_parl_year_panel.rds"))
 
 
 message("  Merging country-level variables into panel...")
-df_merged_2 <- read_csv(here("output", "df_merged_2_1994_2024.csv"))
+df_merged_2 <- read_csv(here("output", "df_merged_2_2004_2024.csv"))
 
 df_merged_3 <- df_merged_2 |>
   left_join(
