@@ -86,6 +86,10 @@ CLAUDE.local.md
 *.swo
 *~
 
+# Word Documents
+*.docx
+*.doc
+
 # VS Code workspace files
 *.code-workspace
 

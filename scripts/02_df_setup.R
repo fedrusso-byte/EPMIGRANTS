@@ -26,8 +26,6 @@ clean_names <- function(x) {
 # Assign EP legislative term from a date vector
 assign_term <- function(date_col) {
   case_when(
-    date_col >= ymd("1994-07-19") & date_col <= ymd("1999-07-19") ~ "4th",
-    date_col >= ymd("1999-07-20") & date_col <= ymd("2004-07-19") ~ "5th",
     date_col >= ymd("2004-07-20") & date_col <= ymd("2009-07-13") ~ "6th",
     date_col >= ymd("2009-07-14") & date_col <= ymd("2014-06-30") ~ "7th",
     date_col >= ymd("2014-07-01") & date_col <= ymd("2019-07-01") ~ "8th",
@@ -38,9 +36,9 @@ assign_term <- function(date_col) {
 
 # Legislature start/end dates
 legislature_starts <- tibble(
-  legislative_term = c("4th", "5th", "6th", "7th", "8th", "9th"),
-  term_start = ymd(c("1994-07-19", "1999-07-20", "2004-07-20", "2009-07-14", "2014-07-01", "2019-07-02")),
-  term_end = ymd(c("1999-07-19", "2004-07-19", "2009-07-13", "2014-06-30", "2019-07-01", "2024-07-15"))
+  legislative_term = c("6th", "7th", "8th", "9th"),
+  term_start = ymd(c("2004-07-20", "2009-07-14", "2014-07-01", "2019-07-02")),
+  term_end = ymd(c("2009-07-13", "2014-06-30", "2019-07-01", "2024-07-15"))
 )
 
 # Load the data ####
@@ -57,13 +55,11 @@ all_meps <- read_csv(here("data_raw", "meps.csv")) |>
   select(-nationalty) |> 
   arrange(parliamentary_id) |> 
   mutate(political_groups = str_replace_all(political_groups, fixed("..."), "/ 15-07-2024")) |> 
-  rename(p1994_1999 = "1994_1999",
-         p1999_2004 = "1999_2004",
-         p2004_2009 = "2004_2009",
+  rename(p2004_2009 = "2004_2009",
          p2009_2014 = "2009_2014",
          p2014_2019 = "2014_2019",
          p2019_2024 = "2019_2024") |>
-  filter(if_any(c(p1994_1999, p1999_2004, p2004_2009, p2009_2014, p2014_2019, p2019_2024), ~ !is.na(.)))
+  filter(if_any(c(p2004_2009, p2009_2014, p2014_2019, p2019_2024), ~ !is.na(.)))
 stopifnot("MEPs data is empty" = nrow(all_meps) > 0)
 
 #political groups per legislature-year
@@ -85,7 +81,7 @@ groups <- all_meps |>
   ) |>
   mutate(start = as.Date(start, format = "%d-%m-%Y"),
          end = as.Date(end, format = "%d-%m-%Y")) |>
-  filter(start  >= as.Date("1994-07-19")) |> 
+  filter(start  >= as.Date("2004-07-20")) |> 
   mutate(start = ymd(start)) |> 
   mutate(legislative_term = assign_term(start)) |>
   mutate(
@@ -143,7 +139,7 @@ committee <- all_meps |>
   ) |>
   mutate(start = as.Date(start, format = "%d-%m-%Y"),
          end = as.Date(end, format = "%d-%m-%Y")) |>
-  filter(start  >= as.Date("1994-07-19")) |> 
+  filter(start  >= as.Date("2004-07-20")) |> 
   mutate(start = ymd(start)) |> 
   mutate(legislative_term = assign_term(start)) %>%
 # Filter using str_detect() to elimitate delegations and special/temporary/inquiry committees
@@ -307,7 +303,7 @@ meps_expanded = meps_expanded |>
 message("  Loading questions data...")
 questions <- read_csv(here("data_processed", "epq.csv")) |>
   select(-url, -author_s, -party_s, -subject) |>
-  filter(date >= as.Date("1994-07-19")) |> 
+  filter(date >= as.Date("2004-07-20")) |> 
   filter(date <= as.Date("2024-06-08")) |> 
   mutate(
     issue_name = case_when(
@@ -341,7 +337,7 @@ questions <- read_csv(here("data_processed", "epq.csv")) |>
 
 stopifnot(
   "Questions data is empty" = nrow(questions) > 0,
-  "Expected 30 leg_years in questions" = n_distinct(questions$leg_year) == 30
+  "Expected 20 leg_years in questions" = n_distinct(questions$leg_year) == 20
 )
 
 # Aggregate the data on questions by mep_id
@@ -438,7 +434,7 @@ stopifnot(
 message("  Writing ", nrow(df_merged_2), " rows, ",
         n_distinct(df_merged_2$mep_id), " MEPs, ",
         n_distinct(df_merged_2$issue_name), " issues")
-write_csv(df_merged_2, here("output", "df_merged_2_1994_2024.csv"))
-saveRDS(df_merged_2, here("output", "df_merged_2_1994_2024.rds"))
+write_csv(df_merged_2, here("output", "df_merged_2_2004_2024.csv"))
+saveRDS(df_merged_2, here("output", "df_merged_2_2004_2024.rds"))
 
 
