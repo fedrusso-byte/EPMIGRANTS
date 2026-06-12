@@ -9,21 +9,18 @@ dir.create(here("output"), showWarnings = FALSE, recursive = TRUE)
 rm(list = ls())
 
 check_na <- function(dataset) {
-  
   dataset %>% 
     dplyr::summarise_all(list(~sum(is.na(.)))) %>% 
     as.data.frame()
-  
 }
 
 clean_names <- function(x) {
-  x <- tolower(x)                         # tutto minuscolo
-  x <- gsub("[^a-z ]", "", x)            # rimuove tutto tranne lettere e spazi
-  x <- trimws(x)                         # rimuove spazi prima e dopo
+  x <- tolower(x)                         
+  x <- gsub("[^a-z ]", "", x)            
+  x <- trimws(x)                         
   return(x)
 }
 
-# Assign EP legislative term from a date vector
 assign_term <- function(date_col) {
   case_when(
     date_col >= ymd("2004-07-20") & date_col <= ymd("2009-07-13") ~ "6th",
@@ -34,7 +31,6 @@ assign_term <- function(date_col) {
   )
 }
 
-# Legislature start/end dates
 legislature_starts <- tibble(
   legislative_term = c("6th", "7th", "8th", "9th"),
   term_start = ymd(c("2004-07-20", "2009-07-14", "2014-07-01", "2019-07-02")),
@@ -46,13 +42,12 @@ legislature_starts <- tibble(
 ## Data on all meps ####
 message("  Loading MEP data...")
 all_meps <- read_csv(here("data_raw", "meps.csv")) |>
+  mutate(country_name = case_when(nationalty == "Czech Republic" ~ "Czechia", TRUE ~ nationalty)) |>
   select(
     parliamentary_id:president,
     contains(c("1994_1999","1999_2004","2004_2009","2009_2014","2014_2019","2019_2024")),
-    mep_given_name:mep_name
+    mep_given_name:mep_name, country_name
   ) |>
-  mutate(country_name = case_when(nationalty == "Czech Republic" ~ "Czechia", TRUE ~ nationalty)) |>
-  select(-nationalty) |> 
   arrange(parliamentary_id) |> 
   mutate(political_groups = str_replace_all(political_groups, fixed("..."), "/ 15-07-2024")) |> 
   rename(p2004_2009 = "2004_2009",
@@ -62,16 +57,24 @@ all_meps <- read_csv(here("data_raw", "meps.csv")) |>
   filter(if_any(c(p2004_2009, p2009_2014, p2014_2019, p2019_2024), ~ !is.na(.)))
 stopifnot("MEPs data is empty" = nrow(all_meps) > 0)
 
-#political groups per legislature-year
+# === NUOVA AGGIUNTA: Join dei dati sulla minoranza visibile ===
+message("  Merging visible minority data...")
+
+# Carichiamo il file selezionando solo le due colonne chiave
+minority_df <- read_csv(here("data_raw", "minority.csv")) |> 
+  select(parliamentary_id, minority)
+
+# Uniamo i dati a livello di singolo MEP
+all_meps <- all_meps |> 
+  left_join(minority_df, by = "parliamentary_id")
+
 groups <- all_meps |> 
   select(parliamentary_id, political_groups) |> 
-  # Extract each record that looks like "DD-MM-YYYY / DD-MM-YYYY : some text"
   mutate(records = str_extract_all(
     political_groups,
     "\\d{2}-\\d{2}-\\d{4} / \\d{2}-\\d{2}-\\d{4} : .*?(?=\\d{2}-\\d{2}-\\d{4} /|$)"
   )) %>%
   unnest(records) %>%
-  # Now split each record into start_date, end_date, and position
   separate(
     records,
     into = c("start", "end", "position"),
@@ -81,7 +84,7 @@ groups <- all_meps |>
   ) |>
   mutate(start = as.Date(start, format = "%d-%m-%Y"),
          end = as.Date(end, format = "%d-%m-%Y")) |>
-  filter(start  >= as.Date("2004-07-20")) |> 
+  filter(start >= as.Date("2004-07-20")) |> 
   mutate(start = ymd(start)) |> 
   mutate(legislative_term = assign_term(start)) |>
   mutate(
@@ -93,7 +96,6 @@ groups <- all_meps |>
       str_remove("\\s+Member.*$") |> 
       str_remove(regex("\\b(chair|vice-chair|observer|treasurer).*", ignore_case = TRUE)) |> 
       str_trim(),
-    # Mappatura a sigle standard
     group_abbr = case_when(
       str_detect(first_political_group, regex("Group Union for Europe|Forza Europa Group|European People's Party", ignore_case = TRUE)) ~ "PPE",
       str_detect(first_political_group, regex("Progressive Alliance of Socialists and Democrats|Party of European Socialists|Socialist Group", ignore_case = TRUE)) ~ "S&D",
@@ -123,13 +125,11 @@ groups <- all_meps |>
 # Committee memberships ####
 committee <- all_meps |>
   select(parliamentary_id, member) |> 
-  # Extract each record that looks like "DD-MM-YYYY / DD-MM-YYYY : some text"
   mutate(records = str_extract_all(
     member,
     "\\d{2}-\\d{2}-\\d{4} / \\d{2}-\\d{2}-\\d{4} : .*?(?=\\d{2}-\\d{2}-\\d{4} /|$)"
   )) %>%
   unnest(records) %>%
-  # Now split each record into start_date, end_date, and position
   separate(
     records,
     into = c("start", "end", "position"),
@@ -139,17 +139,15 @@ committee <- all_meps |>
   ) |>
   mutate(start = as.Date(start, format = "%d-%m-%Y"),
          end = as.Date(end, format = "%d-%m-%Y")) |>
-  filter(start  >= as.Date("2004-07-20")) |> 
+  filter(start >= as.Date("2004-07-20")) |> 
   mutate(start = ymd(start)) |> 
   mutate(legislative_term = assign_term(start)) %>%
-# Filter using str_detect() to elimitate delegations and special/temporary/inquiry committees
   filter(str_detect(position, "Committee")) |> 
   filter(!str_detect(position, "Delegation")) |>
   filter(!str_detect(position, "Special Committee")) |>
   filter(!str_detect(position, "Temporary Committee")) |>
   filter(!str_detect(position, "Committee of Inquiry")) |>
   filter(!str_detect(position, "Conference of Committee Chairs")) |>
-#aggregate committee
   mutate(
     committee_abbr = case_when(
       str_detect(position, regex("Agriculture|Fisheries", ignore_case = TRUE)) ~ "AGRI/PECH",
@@ -176,73 +174,49 @@ committee <- all_meps |>
     )
   )
 
-# Ensure dates are in Date format
 committee$start <- as.Date(committee$start)
 committee$end <- as.Date(committee$end)
 legislature_starts$term_start <- as.Date(legislature_starts$term_start)
 legislature_starts$term_end <- as.Date(legislature_starts$term_end)
 
-
-# 2. Generate all MEP-legislature-legislative_year combinations
 mep_legislature_combinations <- committee %>%
   distinct(parliamentary_id, legislative_term) %>%
   left_join(legislature_starts, by = "legislative_term")
 
 mep_legislature_years_expanded <- mep_legislature_combinations %>%
-  rowwise() %>%
-  mutate(
-    num_legislative_years = ceiling(as.numeric(difftime(term_end, term_start, units = "days")) / 365.25),
-    legislative_year = list(seq_len(num_legislative_years))
-  ) %>%
-  unnest(legislative_year) %>%
-  ungroup()
+  mutate(num_legislative_years = ceiling(as.numeric(difftime(term_end, term_start, units = "days")) / 365.25)) %>%
+  uncount(num_legislative_years, .id = "legislative_year")
 
-# 3. Calculate the start and end dates for each legislative_year
 mep_legislature_years_with_dates <- mep_legislature_years_expanded %>%
   mutate(
     leg_year_start = term_start %m+% years(legislative_year - 1),
-    leg_year_end = if_else(legislative_year < num_legislative_years,
+    leg_year_end = if_else(legislative_year < (ceiling(as.numeric(difftime(term_end, term_start, units = "days")) / 365.25)),
                            term_start %m+% years(legislative_year) %m-% days(1),
                            term_end)
   )
 
-# 4. Join with committee data and calculate overlap using lubridate intervals
 processed_data <- mep_legislature_years_with_dates %>%
   left_join(committee, by = c("parliamentary_id", "legislative_term"), relationship = "many-to-many") %>%
   mutate(
-    # Define the legislative year interval
     leg_year_interval = interval(leg_year_start, leg_year_end),
-    # Define the committee membership interval
     committee_interval = interval(start, end),
-    
-    # Calculate the intersection of the two intervals
-    # The intersection is an interval itself, or an empty interval if no overlap
     overlap_interval = intersect(leg_year_interval, committee_interval),
-    
-    # Get the length of the overlap interval in days.
-    # If there's no overlap, duration(empty_interval) is 0.
     overlap_days = as.numeric(as.duration(overlap_interval), "days")
   ) %>%
-  # Select only relevant columns for the next step and remove temporary interval columns
   select(-leg_year_interval, -committee_interval, -overlap_interval)
-
-# 5. For each MEP-legislature-legislative_year, find the committee with the maximum overlap
 
 final_data <- processed_data %>%
   group_by(parliamentary_id, legislative_term, legislative_year) %>%
-  # Arrange by overlap_days in descending order
   arrange(desc(overlap_days), .by_group = TRUE) %>%
-  # Slice the first row for each group (max overlap)
   slice(1) %>%
   ungroup() %>%
   select(parliamentary_id, legislative_term, legislative_year, committee_abbr, overlap_days) %>%
   rename(committee_most_time = committee_abbr)
 
-# 6.Eliminate all data with legislative_year = 6 , create leg and rename parliamentary_id
-final_data = final_data |>
-  filter(legislative_year != 6) |>
-  mutate(leg_year = paste0(legislative_term, legislative_year)) |>
-  rename(mep_id = parliamentary_id)|>
+final_data <- final_data %>%
+  filter(legislative_year != 6) %>%
+  mutate(leg_year = paste0(legislative_term, legislative_year)) %>%
+  rename(mep_id = parliamentary_id) %>%
   select(mep_id, leg_year, committee_most_time)
 
 # Build MEP mandate panel ####
@@ -254,15 +228,13 @@ mandati <- groups |>
     .groups = "drop"
   )
 
-# Expand mandates to yearly panel
 mandati_expanded <- mandati |> 
   left_join(legislature_starts, by = "legislative_term") |> 
   mutate(
-    years_served = interval(term_start, mandate_end) %/% years(1) + 1
+    years_served = (interval(term_start, mandate_end) %/% years(1)) + 1
   ) |> 
-  ungroup() |> 
-  mutate(year_index = map2(mandate_start, years_served, ~ seq(0, .y - 1))) |> 
-  unnest(year_index) |> 
+  uncount(years_served, .id = "year_index") |>
+  mutate(year_index = year_index - 1) |>
   mutate(
     year_start = term_start + years(year_index),
     year_end = pmin(term_start + years(year_index + 1) - days(1), mandate_end),
@@ -275,64 +247,37 @@ mandati_expanded <- mandati |>
 
 meps_expanded <-
   left_join(
-  mandati_expanded,
-  all_meps |>
-  select(
-    parliamentary_id:birth_place,
-    political_groups,
-    mep_given_name,
-    mep_family_name,
-    country_name),
-  by = "parliamentary_id"
+    mandati_expanded,
+    all_meps |>
+      select(
+        parliamentary_id:birth_place,
+        political_groups,
+        mep_given_name,
+        mep_family_name,
+        country_name,
+        minority),
+    by = "parliamentary_id"
   ) |>
-  rename( mep_id = parliamentary_id) |> 
+  rename(mep_id = parliamentary_id) |> 
   arrange(mep_id, leg_year) |> 
-  group_by(mep_id, leg_year) |> # tolgo le osservazioni duplicate perché c'è stato un cambio di gruppo
+  group_by(mep_id, leg_year) |> 
   slice_max(order_by = days_served, n = 1, with_ties = FALSE) |> 
   mutate(year_parl = year(year_start)) |> 
   ungroup() 
 
 rm(groups, mandati, mandati_expanded, all_meps)
 
-# Join meps_expanded with final_data to get committee
-meps_expanded = meps_expanded |>
-  left_join(final_data, by= c("mep_id", "leg_year"))
-
+meps_expanded <- meps_expanded |>
+  left_join(final_data, by = c("mep_id", "leg_year"))
 
 ## Data on questions ####
-message("  Loading questions data...")
+message("  Loading and aggregating questions data by subtopic...")
 questions <- read_csv(here("data_processed", "epq.csv")) |>
-  select(-url, -author_s, -party_s, -subject) |>
   filter(date >= as.Date("2004-07-20")) |> 
   filter(date <= as.Date("2024-06-08")) |> 
-  mutate(
-    issue_name = case_when(
-      major == 1 ~ "Macroeconomics",
-      major == 2 ~ "Civil Rights",
-      major == 4 ~ "Agriculture",
-      major == 5 ~ "Labor",
-      major == 10 ~ "Transportation",
-      major == 12 ~ "Law and Crime",
-      major == 13 ~ "Social Welfare",
-      major == 15 ~ "Domestic Commerce",
-      major == 16 ~ "Defense",
-      major == 17 ~ "Technology",
-      major == 18 ~ "Foreign Trade",
-      major == 19 ~ "International Affairs",
-      major == 20 ~ "Government Operations",
-      major == 6 ~ "Education",
-      major == 8 ~ "Energy",
-      major == 7 ~ "Environment",
-      major == 3 ~ "Health",
-      major == 14 ~ "Housing",
-      major == 9 ~ "Immigration",
-      TRUE ~ "Other"
-  )) |> 
   mutate(legislative_term = assign_term(date)) |> 
   left_join(legislature_starts, by = "legislative_term") |> 
-  mutate(
-    year_index = floor(as.numeric(difftime(date, term_start, units = "days")) / 365.25) + 1) |> 
-  select(-term_start, -term_end) |> 
+  mutate(year_index = (interval(term_start, date) %/% years(1)) + 1) |> 
   mutate(leg_year = paste0(legislative_term, year_index))
 
 stopifnot(
@@ -340,101 +285,51 @@ stopifnot(
   "Expected 20 leg_years in questions" = n_distinct(questions$leg_year) == 20
 )
 
-# Aggregate the data on questions by mep_id
+# Aggregazione MEP-Anno
 questions_df <- questions |> 
-  group_by(mep_id, leg_year, issue_name) |> 
+  group_by(mep_id, leg_year) |> 
   summarise(
-    n_questions = n()
-  ) |> 
-  group_by(mep_id, leg_year) |> 
-  mutate(
-    total_questions = sum(n_questions),
-    perc_questions = round(n_questions / total_questions * 100, digits = 1)) |> 
-  ungroup() |>
-  group_by(mep_id, leg_year) |> 
-  mutate(
-    total_questions = sum(n_questions)) |> 
-  ungroup()
-
+    n_subtopic_201 = sum(subtopic %in% c(201), na.rm = TRUE),
+    n_subtopic_941 = sum(subtopic %in% c(941), na.rm = TRUE),
+    n_subtopic_201_941 = sum(subtopic %in% c(201, 941), na.rm = TRUE),
+    total_questions = n(),
+    .groups = "drop"
+  ) 
 
 # Merge data ####
-message("  Constructing MEP-year-issue panel...")
-issue_names <- questions_df |> 
-  distinct(issue_name) 
+message("  Constructing final MEP-year panel...")
 
 df_merged_2 <- meps_expanded |> 
-  cross_join(issue_names)
-
-## merge questions data with meps data data using mep_id, leg_year, issue_name ####
-
-df_merged_2 <- df_merged_2 |>
-  left_join(questions_df, by = c("mep_id", "leg_year", "issue_name")) |>
-  # fill NAs
+  left_join(questions_df, by = c("mep_id", "leg_year")) |> 
   mutate(
-    n_questions = replace_na(n_questions, 0),
+    n_subtopic_201 = replace_na(n_subtopic_201, 0),
+    n_subtopic_941 = replace_na(n_subtopic_941, 0),
+    n_subtopic_201_941 = replace_na(n_subtopic_201_941, 0),
     total_questions = replace_na(total_questions, 0),
-    perc_questions = replace_na(perc_questions, 0),
-    age = year_parl-birth_year,
+    age = year_parl - birth_year,
     meps_age_cat = case_when(
       age < 40 ~ "age < 40",
       age >= 40 & age < 60 ~ "40-60",
       age >= 60 ~ "age > 60"
-    ))
-
-# Filter ####
-
-## remove "Other" from policy areas ####
-df_merged_2 <- df_merged_2 |> 
-  filter(issue_name != "Other")
-
-## remove UK meps from 9th ####
-df_merged_2 <- df_merged_2 |> 
-  filter(!(country_name == "United Kingdom" & legislative_term =="9th"))
-
-## Create dummy when the issue corresponds with the committee
-## NOTE: some double committees must still be integrated
-df_merged_2 = df_merged_2 |>
-  mutate(
-    issue_name = as.character(issue_name)
-  ) |>
-  mutate(
-    committee = case_when(
-      (issue_name == "Macroeconomics" & committee_most_time %in% c("ECON", "FISC", "BUDG")) ~ 1,
-      (issue_name == "Civil Rights" & committee_most_time %in% c("LIBE", "FEMM")) ~ 1,
-      (issue_name == "Agriculture" & committee_most_time %in% c("AGRI", "AGRI/PECH")) ~ 1, 
-      (issue_name == "Labor" & committee_most_time == "EMPL") ~ 1,
-      (issue_name == "Transportation" & committee_most_time %in% c("TRAN", "REGI/TRAN")) ~ 1,
-      (issue_name == "Law and Crime" & committee_most_time %in% c("LIBE", "JURI")) ~ 1,
-      (issue_name == "Social Welfare" & committee_most_time %in% c("EMPL", "FEMM")) ~ 1, # Corrected EMPOL to EMPL based on common committee_most_time names
-      (issue_name == "Domestic Commerce" & committee_most_time == "IMCO") ~ 1,
-      (issue_name == "Defense" & committee_most_time %in% c("AFET", "SEDE")) ~ 1,
-      (issue_name == "Technology" & committee_most_time %in% c("ITRE", "ITRE/INTA")) ~ 1,
-      (issue_name == "Foreign Trade" & committee_most_time == "INTA") ~ 1, # Changed ENVI to INTA (Environment is ENVI, Foreign Trade is INTA)
-      (issue_name == "International Affairs" & committee_most_time %in% c("AFET", "DEVE")) ~ 1, # AFET is foreign affairs; INTA is trade (mapped to Foreign Trade above)
-      (issue_name == "Government Operations" & committee_most_time %in% c("JURI", "CONT", "AFCO")) ~ 1,
-      (issue_name == "Education" & committee_most_time == "CULT") ~ 1,
-      (issue_name == "Energy" & committee_most_time == "ITRE") ~ 1,
-      (issue_name == "Environment" & committee_most_time == "ENVI") ~ 1,
-      (issue_name == "Health" & committee_most_time %in% c("ENVI", "ENVI/SANT", "SANT")) ~ 1, # Changed SANT to ENVI ( health falls under ENVI in 4th-8th EP)
-      (issue_name == "Housing" & committee_most_time %in% c("EMPL", "ITRE", "REGI")) ~ 1, # Housing: social/employment, industrial policy, or regional development
-      (issue_name == "Immigration" & committee_most_time == "LIBE") ~ 1,
+    ),
+  deve = case_when(
+      committee_most_time == "DEVE" ~ 1,
       TRUE ~ 0
     )
   )
 
+# Filter ####
+df_merged_2 <- df_merged_2 |> 
+  filter(!(country_name == "United Kingdom" & legislative_term == "9th"))
+
 # Sanity checks ####
 stopifnot(
   "df_merged_2 is empty" = nrow(df_merged_2) > 0,
-  "No issue names in df_merged_2" = n_distinct(df_merged_2$issue_name) > 0,
-  "No MEPs in df_merged_2" = n_distinct(df_merged_2$mep_id) > 1000,
-  "committee dummy has unexpected values" = all(df_merged_2$committee %in% c(0, 1))
+  "No MEPs in df_merged_2" = n_distinct(df_merged_2$mep_id) > 1000
 )
 
 # Save the data ####
-message("  Writing ", nrow(df_merged_2), " rows, ",
-        n_distinct(df_merged_2$mep_id), " MEPs, ",
-        n_distinct(df_merged_2$issue_name), " issues")
+message("  Writing ", nrow(df_merged_2), " rows (MEP-years), ",
+        n_distinct(df_merged_2$mep_id), " MEPs")
 write_csv(df_merged_2, here("output", "df_merged_2_2004_2024.csv"))
 saveRDS(df_merged_2, here("output", "df_merged_2_2004_2024.rds"))
-
-

@@ -1,50 +1,20 @@
-# 04_models.R — Negative Binomial GLMM + Marginal Effects
-# Fits multilevel NB model, computes variance decomposition,
+# 04_models.R — Zero-Inflated NB GLMM + Marginal Effects
+# Fits multilevel ZINB model, computes variance decomposition,
 # coefficient tables, effect plots, and marginal predictions.
 
 # Libraries ####
 set.seed(20260321)
 
-if (!requireNamespace("glmmTMB", quietly = TRUE)) {
-  install.packages("glmmTMB")
-}
-
-if (!requireNamespace("patchwork", quietly = TRUE)) {
-  install.packages("patchwork")
-}
-
-if (!requireNamespace("marginaleffects", quietly = TRUE)) {
-  install.packages("marginaleffects")
-}
-
-if (!requireNamespace("performance", quietly = TRUE)) {
-  install.packages("performance")
-}
-
-if (!requireNamespace("see", quietly = TRUE)) {
-  install.packages("see")
-}
-
-if (!requireNamespace("knitr", quietly = TRUE)) {
-  install.packages("knitr")
-}
-
-if (!requireNamespace("kableExtra", quietly = TRUE)) {
-  install.packages("kableExtra")
-}
-
-if (!requireNamespace("broom.mixed", quietly = TRUE)) {
-  install.packages("broom.mixed")
-}
-
-if (!requireNamespace("emmeans", quietly = TRUE)) {
-  install.packages("emmeans")
-}
-
-if (!requireNamespace("scales", quietly = TRUE)) {
-  install.packages("scales")
-}
-
+if (!requireNamespace("glmmTMB", quietly = TRUE)) { install.packages("glmmTMB") }
+if (!requireNamespace("patchwork", quietly = TRUE)) { install.packages("patchwork") }
+if (!requireNamespace("marginaleffects", quietly = TRUE)) { install.packages("marginaleffects") }
+if (!requireNamespace("performance", quietly = TRUE)) { install.packages("performance") }
+if (!requireNamespace("see", quietly = TRUE)) { install.packages("see") }
+if (!requireNamespace("knitr", quietly = TRUE)) { install.packages("knitr") }
+if (!requireNamespace("kableExtra", quietly = TRUE)) { install.packages("kableExtra") }
+if (!requireNamespace("broom.mixed", quietly = TRUE)) { install.packages("broom.mixed") }
+if (!requireNamespace("emmeans", quietly = TRUE)) { install.packages("emmeans") }
+if (!requireNamespace("scales", quietly = TRUE)) { install.packages("scales") }
 
 library(tidyverse)
 library(glmmTMB)
@@ -84,49 +54,51 @@ tidy_exp_coefs <- function(model) {
 }
 
 ############ VARIABLES MISSING AT THIS STAGE ##########################
-# LAG ISSUE ATTENTION
-# NET CONTRIBUTOR
-# PART OF GOVERNING COALITION (although this is partly captured by party family)
+
 #######################################################################
 
 # Load data ####
-message("  Loading data...")
+message("  Loading updated MEP-year dataset...")
 df_merged_3 <- read_csv(here("output", "df_merged_3.csv"))
+
+# Sanity check per verificare la presenza delle nuove variabili time-invariant e del conteggio subtopic
 stopifnot(
   "df_merged_3 is empty" = nrow(df_merged_3) > 0,
-  "Required columns missing" = all(c("n_questions", "committee", "gender",
-    "geographic_region", "euro_member", "party_family", "issue_name",
-    "mep_id", "country", "group_abbr") %in% names(df_merged_3))
+  "Required columns missing" = all(c("n_subtopic_201_941", "total_questions", "gender",
+                                     "geographic_region", "euro_member", "party_family",
+                                     "discrimination_mean", "cmp_mean",
+                                     "mep_id", "country", "group_abbr") %in% names(df_merged_3))
 )
 
-# Fit NB GLMM ####
-message("  Fitting negative binomial GLMM (this may take a few minutes)...")
+# Centratura dei predittori continui per facilitare la convergenza
+df_merged_3 <- df_merged_3 %>%
+  mutate(
+    discrimination_center = discrimination_mean - mean(discrimination_mean, na.rm = TRUE),
+    cmp_center = cmp_mean - mean(cmp_mean, na.rm = TRUE)
+  )
 
-nb_model <- glmmTMB(
-  n_questions ~
-    committee + gender + geographic_region + euro_member + party_family + issue_name +
-    (1 | mep_id) +
-    (1 | country) +
-    (1 | group_abbr),
-  family = nbinom2,
-  data = df_merged_3
+# Fit Zero-Inflated NB GLMM ####
+message("  Fitting Zero-Inflated negative binomial GLMM with structural offsets...")
+
+zinb_model <- glmmTMB(
+   n_subtopic_201 ~ 
+     gender + geographic_region + party_family + deve + minority * cmp_center + 
+     offset(log(total_questions + 1)) + 
+     (1 | mep_id),            
+   family = nbinom2,
+   ziformula = ~ 1,           
+   data = df_merged_3 |> filter(legislative_term %in% c("8th", "9th")) 
 )
 
-summary(nb_model)
-saveRDS(nb_model, here("output", "nb_model.rds"))
+summary(zinb_model)
+saveRDS(zinb_model, here("output", "zinb_model.rds"))
 
 # Model performance ####
-# Pseudo-R² Measures for GLMMs: Marginal & Conditional R²
-# from Nakagawa & Schielzeth (2013)
-
-# model_check <- check_model(nb_model) # intensive (> 4 mins), do later
-model_performance <- model_performance(nb_model)
-saveRDS(model_performance, here("output", "nb_model_performance.rds"))
+message("  Evaluating model performance...")
+model_performance <- model_performance(zinb_model)
+saveRDS(model_performance, here("output", "zinb_model_performance.rds"))
 
 print(model_performance)
-# R2 for Mixed Models
-# Conditional R2: 0.733
-# Marginal R2: 0.242
 
 # Model fit table
 model_fit <- model_performance
@@ -138,23 +110,27 @@ model_fit_long <- model_fit_selected %>%
   mutate(Value = round(Value, 3))
 
 kable(model_fit_long,
-      caption = "Key Model Fit Statistics for Negative Binomial GLMM",
+      caption = "Key Model Fit Statistics for Zero-Inflated Negative Binomial GLMM",
       col.names = c("Criterion", "Value")) %>%
   kable_styling(full_width = FALSE)
 
-# Variance decomposition ####
 
-# Random effects overview
-vc_raw <- VarCorr(nb_model)
+# Variance decomposition ####
+message("  Decomposing variance...")
+vc_raw <- VarCorr(zinb_model)
+
+# Estrazione robusta della varianza condizionale indipendente dalla struttura di glmmTMB
+vc_cond <- if ("cond" %in% names(vc_raw)) vc_raw$cond else vc_raw
+
 vc <- tibble(
-  grp = names(vc_raw$cond),
-  vcov = sapply(vc_raw$cond, function(x) attr(x, "stddev")^2)
+  grp = names(vc_cond),
+  vcov = sapply(vc_cond, function(x) attr(x, "stddev")^2)
 )
 vc$proportion <- vc$vcov / sum(vc$vcov)
-vc
+print(vc)
 
 # Table 1: Model-level variance summary
-vc_df <- insight::get_variance(nb_model)
+vc_df <- insight::get_variance(zinb_model)
 saveRDS(vc_df, here("output", "vc_df.rds"))
 
 var_fixed <- vc_df$var.fixed
@@ -174,17 +150,16 @@ model_variance_summary %>%
     Proportion = percent(Proportion, accuracy = 1)
   ) %>%
   kable(
-    caption = "Variance Decomposition of the Negative Binomial Model",
+    caption = "Variance Decomposition of the Zero-Inflated Model (Conditional Component)",
     col.names = c("Component", "Variance", "Proportion"),
     format = "html"
   ) %>%
   kable_styling(full_width = FALSE)
 
 # Table 2: Random effects breakdown
-vc_raw2 <- VarCorr(nb_model)
-var_mep <- attr(vc_raw2$cond$mep_id, "stddev")^2
-var_country <- attr(vc_raw2$cond$country, "stddev")^2
-var_group <- attr(vc_raw2$cond$group_abbr, "stddev")^2
+var_mep <- attr(vc_cond$mep_id, "stddev")^2
+var_country <- attr(vc_cond$country, "stddev")^2
+var_group <- attr(vc_cond$group_abbr, "stddev")^2
 total_random <- var_mep + var_country + var_group
 
 random_effects_breakdown <- tibble(
@@ -206,51 +181,57 @@ random_effects_breakdown %>%
   ) %>%
   kable_styling(full_width = FALSE)
 
-# Random intercepts for presentation ####
 
-country_random_intercepts <- ranef(nb_model)$cond$country %>%
+# Random intercepts for presentation ####
+ranef_cond <- if ("cond" %in% names(ranef(zinb_model))) ranef(zinb_model)$cond else ranef(zinb_model)
+
+country_random_intercepts <- ranef_cond$country %>%
   as.data.frame() %>%
   rename(effect = `(Intercept)`) %>%
-  mutate(country = rownames(ranef(nb_model)$cond$country))
+  mutate(country = rownames(ranef_cond$country))
 saveRDS(country_random_intercepts, here("output", "country_random_intercepts.rds"))
 
-group_random_intercepts <- ranef(nb_model)$cond$group_abbr %>%
+group_random_intercepts <- ranef_cond$group_abbr %>%
   as.data.frame() %>%
   rename(effect = `(Intercept)`) %>%
-  mutate(group_abbr = rownames(ranef(nb_model)$cond$group_abbr))
+  mutate(group_abbr = rownames(ranef_cond$group_abbr))
 saveRDS(group_random_intercepts, here("output", "group_random_intercepts.rds"))
 
-# Prediction grid ####
 
-grid <- df_merged_3 %>%
-  distinct(issue_name) %>%
-  mutate(
-    gender = "F",
-    geographic_region = "Western",
-    euro_member = 1,
-    party_family = "Social democrats",
-    committee = 1
-  )
+# Prediction grid (Focalizzazione su CMP e Modello Lineare) ####
+grid <- tibble(
+  cmp_center = seq(min(df_merged_3$cmp_center, na.rm = TRUE), 
+                   max(df_merged_3$cmp_center, na.rm = TRUE), 
+                   length.out = 100),
+  discrimination_center = 0, 
+  gender = "F",
+  geographic_region = "Western",
+  euro_member = 1,
+  party_family = "Social democrats",
+  total_questions = mean(df_merged_3$total_questions, na.rm = TRUE)
+)
 
-grid$pred <- predict(nb_model, newdata = grid, type = "response", re.form = NA)
+grid$pred <- predict(zinb_model, newdata = grid, type = "response", re.form = NA)
 
-ggplot(grid, aes(x = reorder(issue_name, pred), y = pred)) +
-  geom_col() +
-  coord_flip() +
-  labs(y = "Predicted Questions per Year-Issue-MEP", x = "Issue Area")
+ggplot(grid, aes(x = cmp_center, y = pred)) +
+  geom_line(color = "darkblue", size = 1) +
+  labs(y = "Predicted Subtopic Questions per MEP-Year", 
+       x = "Claim-making Pressure (Centered)",
+       title = "Predicted Activity by Country Claim-making Pressure") +
+  theme_minimal()
+
 
 # Exponentiated coefficients table ####
+exp_table <- tidy_exp_coefs(zinb_model)
 
-exp_table <- tidy_exp_coefs(nb_model)
-
-# Variable labels
 label_lookup <- c(
-  "committee" = "Committee match",
   "genderM" = "Gender: Male",
   "geographic_regionNorthern" = "Region: Northern",
   "geographic_regionSouthern" = "Region: Southern",
   "geographic_regionWestern" = "Region: Western",
   "euro_member" = "Euro area member",
+  "discrimination_center" = "Country Discrimination (Centered)",
+  "cmp_center" = "Claim-making Pressure (Centered)",
   "party_familyCommunists and socialists" = "Party Family: Communists/Socialists",
   "party_familyEurosceptic conservatives" = "Party Family: Eurosceptic Conservatives",
   "party_familyEurosceptics" = "Party Family: Eurosceptics",
@@ -261,33 +242,26 @@ label_lookup <- c(
   "party_familySocial democrats" = "Party Family: Social Democrats"
 )
 
-issue_labels <- unique(grep("^issue_name", exp_table$term, value = TRUE))
-issue_label_map <- setNames(
-  gsub("^issue_name", "Issue: ", issue_labels),
-  issue_labels
-)
-full_labels <- c(label_lookup, issue_label_map)
-
 exp_table <- exp_table %>%
   mutate(
-    label = recode(term, !!!full_labels),
+    label = recode(term, !!!label_lookup),
     label = ifelse(is.na(label), term, label),
     category = case_when(
-      term == "committee" ~ "0_Committee",
       term == "genderM" ~ "1_Gender",
       grepl("^geographic_region", term) ~ "2_Region",
       term == "euro_member" ~ "3_Euro member",
-      grepl("^party_family", term) ~ "4_Party family",
-      grepl("^issue_name", term) ~ "5_Issue area",
+      term %in% c("discrimination_center", "cmp_center") ~ "4_Country Levels (Macro)",
+      grepl("^party_family", term) ~ "5_Party family",
       TRUE ~ "6_Other"
     )
   ) %>%
   arrange(category, label) %>%
   dplyr::select(label, estimate, exp_estimate, std.error, pval_str)
+
 saveRDS(exp_table, here("output", "exp_table.rds"))
 
 kable(exp_table,
-      caption = "Exponentiated Coefficients - Negative Binomial Model",
+      caption = "Exponentiated Coefficients (Count Component) - Zero-Inflated Model",
       col.names = c("Variable", "Log Coef", "Exp(Coef)", "SE", "p-value")) %>%
   kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover")) %>%
   footnote(
@@ -296,73 +270,62 @@ kable(exp_table,
     footnote_as_chunk = TRUE
   )
 
-# Effect plots ####
 
-# Prepare effect data
-effects_df <- broom.mixed::tidy(nb_model, component = "cond") %>%
+# Effect plots ####
+effects_df <- broom.mixed::tidy(zinb_model, component = "cond") %>%
+  dplyr::filter(term != "(Intercept)") %>%
   mutate(
     exp_estimate = exp(estimate),
     conf.low = exp(estimate - 1.96 * std.error),
     conf.high = exp(estimate + 1.96 * std.error),
     term_clean = case_when(
-      term == "committee" ~ "Committee match",
       term == "genderM" ~ "Gender: Male",
       term == "euro_member" ~ "Euro member",
+      term == "discrimination_center" ~ "Country Discrimination",
+      term == "cmp_center" ~ "Claim-making Pressure",
       grepl("^geographic_region", term) ~ gsub("geographic_region", "Region: ", term),
       grepl("^party_family", term) ~ gsub("party_family", "Party: ", term),
-      grepl("^issue_name", term) ~ gsub("issue_name", "Issue: ", term),
       TRUE ~ term
     ),
     category = case_when(
-      term == "committee" ~ "Committee",
       term == "genderM" ~ "Gender",
       grepl("^geographic_region", term) ~ "Region",
       term == "euro_member" ~ "Euro member",
+      term %in% c("discrimination_center", "cmp_center") ~ "Country Levels (Macro)",
       grepl("^party_family", term) ~ "Party family",
-      grepl("^issue_name", term) ~ "Issue area",
       TRUE ~ "Other"
     )
   )
 saveRDS(effects_df, here("output", "effects_df.rds"))
 
-# Individual effect plots
-
+# Individual plots
 effects_df %>%
-  dplyr::filter(category == "Issue area") %>%
+  dplyr::filter(category == "Country Levels (Macro)") %>%
   ggplot(aes(x = exp_estimate, y = reorder(term_clean, exp_estimate))) +
-  geom_point() +
-  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), height = 0.2) +
+  geom_point(color = "darkred", size = 2) +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), height = 0.2, color = "darkred") +
   geom_vline(xintercept = 1, linetype = "dashed", color = "gray") +
-  labs(title = "Effect of Issue Area on Question Count",
-       x = "Multiplicative Effect (exp(B))", y = "Issue Area") +
+  labs(title = "Effect of Country Macro Variables on Subtopic Activity",
+       x = "Multiplicative Effect (exp(B))", y = "") +
   theme_minimal()
 
-# A. Party Family (default: EPP)
 effects_df %>%
   dplyr::filter(category == "Party family") %>%
   ggplot(aes(x = exp_estimate, y = reorder(term_clean, exp_estimate))) +
   geom_point(color = "steelblue") +
   geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), height = 0.2, color = "steelblue") +
   geom_vline(xintercept = 1, linetype = "dashed", color = "gray") +
-  labs(title = "Effect of Party Family", x = "Multiplicative Effect", y = "") +
+  labs(title = "Effect of Party Family", x = "Multiplicative Effect (exp(B))", y = "") +
   theme_minimal()
 
-# B. Region and Gender (default: Eastern, Female)
-effects_df %>%
-  dplyr::filter(category %in% c("Region", "Gender")) %>%
-  ggplot(aes(x = exp_estimate, y = reorder(term_clean, exp_estimate))) +
-  geom_point(color = "darkgreen") +
-  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), height = 0.2, color = "darkgreen") +
-  geom_vline(xintercept = 1, linetype = "dashed", color = "gray") +
-  labs(title = "Effect of Region and Gender", x = "Multiplicative Effect", y = "") +
-  theme_minimal()
 
-# Combined facet plot with patchwork (proportional heights)
+# Combined facet plot with patchwork (proportional heights) ####
 
+# DEFINIZIONE DELLA FUNZIONE - Messa prima del suo utilizzo
 make_plot <- function(df, title) {
   ggplot(df, aes(x = exp_estimate, y = reorder(term_clean, exp_estimate))) +
-    geom_point() +
-    geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), height = 0.2) +
+    geom_point(color = "black", size = 1.5) +
+    geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), height = 0.2, color = "black") +
     geom_vline(xintercept = 1, linetype = "dashed", color = "gray") +
     labs(title = title, x = NULL, y = NULL) +
     theme_minimal(base_size = 11) +
@@ -373,167 +336,109 @@ make_plot <- function(df, title) {
     )
 }
 
+# Generazione della lista di grafici tramite lapply
 plots <- effects_df %>%
   dplyr::filter(category != "Other") %>%
   group_split(category) %>%
   setNames(unique(effects_df$category[effects_df$category != "Other"])) %>%
   lapply(function(df) make_plot(df, unique(df$category)))
 
+# Calcolo proporzionale delle altezze degli assi Y
 heights <- sapply(plots, function(p) length(ggplot_build(p)$data[[1]]$y))
 
+# Unione dei grafici con patchwork
 final_plot <- wrap_plots(plots, ncol = 1, heights = heights) +
   plot_annotation(
-    title = NULL,
-    theme = theme(
-      plot.margin = margin(5, 10, 5, 10),
-      axis.title.x = element_text(size = 12)
-    )
-  ) &
-  theme(plot.margin = margin(5, 10, 5, 10))
+    title = "Multiplicative Effects on Subtopic Question Activity",
+    theme = theme(plot.margin = margin(5, 10, 5, 10), axis.title.x = element_text(size = 12))
+  ) & theme(plot.margin = margin(5, 10, 5, 10))
 
 final_plot <- final_plot & labs(x = "Multiplicative Effect (exp(B))")
 final_plot
 
-# ggsave("output/figures/effects_plot.png", final_plot, width = 8, height = 12)
+ggsave("output/figures/effects_plot.png", final_plot, width = 8, height = 10)
 
 # Bar chart effect plots ####
+exp_tab <- tidy_exp_coefs(zinb_model)
 
-exp_tab <- tidy_exp_coefs(nb_model)
+macro_effects <- exp_tab %>% dplyr::filter(term %in% c("discrimination_center", "cmp_center"))
+ggplot(macro_effects, aes(x = reorder(label, exp_estimate), y = exp_estimate)) +
+  geom_col(fill = "darkred", width = 0.5) + coord_flip() +
+  labs(x = "Macro Indicator", y = "Multiplicative Effect (exp(B))", title = "Effect of Country-Level Characteristics") +
+  theme_minimal()
 
-# A. Party Family
-party_effects <- exp_tab %>%
-  dplyr::filter(grepl("^party_family", term)) %>%
-  mutate(term = gsub("party_family", "", term))
-
+party_effects <- exp_tab %>% dplyr::filter(grepl("^party_family", term)) %>% mutate(term = gsub("party_family", "", term))
 ggplot(party_effects, aes(x = reorder(term, exp_estimate), y = exp_estimate)) +
-  geom_col(fill = "steelblue") +
-  coord_flip() +
-  labs(x = "Party Family", y = "Multiplicative Effect (exp(B))",
-       title = "Effect of Party Family on Number of Questions")
+  geom_col(fill = "steelblue") + coord_flip() +
+  labs(x = "Party Family", y = "Multiplicative Effect (exp(B))", title = "Effect of Party Family on Subtopic Questions") +
+  theme_minimal()
 
-# B. Gender and Geography
-demographic_effects <- exp_tab %>%
-  dplyr::filter(term %in% c("genderM", "geographic_regionNorthern",
-                      "geographic_regionSouthern", "geographic_regionWestern"))
-
-ggplot(demographic_effects, aes(x = reorder(term, exp_estimate), y = exp_estimate)) +
-  geom_col(fill = "darkgreen") +
-  coord_flip() +
-  labs(x = "Demographic Group", y = "Multiplicative Effect (exp(B))",
-       title = "Effect of Gender and Region")
-
-# C. Issue Area
-issue_effects <- exp_tab %>%
-  dplyr::filter(grepl("^issue_name", term)) %>%
-  mutate(issue = gsub("issue_name", "", term))
-
-ggplot(issue_effects, aes(x = reorder(issue, exp_estimate), y = exp_estimate)) +
-  geom_col(fill = "darkred") +
-  coord_flip() +
-  labs(x = "Issue Area", y = "Multiplicative Effect (exp(B))",
-       title = "Baseline Question Intensity by Issue")
 
 # Marginal effects ####
 message("  Computing marginal predictions...")
-# NOTE: avg_predictions on the full dataset (415K rows) requires >8GB RAM.
-# We use a 10% subsample for computation; results are stable at this size.
-
 df_sample <- df_merged_3 %>% sample_frac(0.10)
 
-# Average predictions by issue (fixed effects only)
-if (file.exists(here("output", "average_predictions_marginal_no_randomeffects.rds"))) {
-  avg_preds <- readRDS(here("output", "average_predictions_marginal_no_randomeffects.rds"))
+# 1. Predizioni medie al variare della Claim-making Pressure (CMP)
+if (file.exists(here("output", "predictions_marginal_cmp.rds"))) {
+  avg_preds_cmp <- readRDS(here("output", "predictions_marginal_cmp.rds"))
 } else {
-  avg_preds <- avg_predictions(
-    model = nb_model,
-    variables = "issue_name",
-    newdata = df_sample,
+  avg_preds_cmp <- predictions(
+    model = zinb_model,
+    newdata = datagrid(cmp_center = seq(min(df_sample$cmp_center, na.rm=TRUE), 
+                                        max(df_sample$cmp_center, na.rm=TRUE), 
+                                        length.out = 50)),
     re.form = NA
   )
-  saveRDS(avg_preds, file = here("output", "average_predictions_marginal_no_randomeffects.rds"))
+  saveRDS(avg_preds_cmp, file = here("output", "predictions_marginal_cmp.rds"))
 }
 
-ggplot(avg_preds, aes(x = estimate, y = reorder(issue_name, estimate))) +
-  geom_point() +
-  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), height = 0.2) +
-  labs(x = "Predicted Questions per MEP-Year (Averaged over all MEPs)",
-       y = "Issue Area",
-       title = "Average Predicted Question Count by Issue") +
+ggplot(avg_preds_cmp, aes(x = cmp_center, y = estimate)) +
+  geom_line(color = "darkblue", size = 1) +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.15, fill = "darkblue") +
+  labs(x = "Claim-making Pressure (Centered)", y = "Predicted Questions per MEP-Year", title = "Marginal Effect of Claim-making Pressure") +
   theme_minimal()
 
-# Average predictions including random effects
-if (file.exists(here("output", "average_predictions_marginal_randomeffects.rds"))) {
-  avg_preds_random <- readRDS(here("output", "average_predictions_marginal_randomeffects.rds"))
+# 2. Predizioni medie per Famiglia Politica
+if (file.exists(here("output", "predictions_marginal_parties.rds"))) {
+  avg_preds_parties <- readRDS(here("output", "predictions_marginal_parties.rds"))
 } else {
-  avg_preds_random <- avg_predictions(
-    model = nb_model,
-    variables = "issue_name",
+  avg_preds_parties <- avg_predictions(
+    model = zinb_model,
+    variables = "party_family",
     newdata = df_sample,
-    re.form = NULL
+    re.form = NA
   )
-  saveRDS(avg_preds_random, file = here("output", "average_predictions_marginal_randomeffects.rds"))
+  saveRDS(avg_preds_parties, file = here("output", "predictions_marginal_parties.rds"))
 }
 
-ggplot(avg_preds_random, aes(x = estimate, y = reorder(issue_name, estimate))) +
-  geom_point() +
-  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), height = 0.2) +
-  labs(x = "Predicted Questions per MEP-Year (Averaged over all MEPs)",
-       y = "Issue Area",
-       title = "Average Predicted Question Count by Issue (with random effects)") +
+ggplot(avg_preds_parties, aes(x = estimate, y = reorder(party_family, estimate))) +
+  geom_point(color = "steelblue", size = 2) +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), height = 0.2, color = "steelblue") +
+  labs(x = "Predicted Questions per MEP-Year", y = "Party Family", title = "Average Predicted Question Count by Party Family") +
   theme_minimal()
 
-# Grouped predictions: Issue x Party Family
-if (file.exists(here("output", "grouped_predictions_parties.rds"))) {
-  grouped_preds_parties <- readRDS(here("output", "grouped_predictions_parties.rds"))
+# 3. Predizioni condizionate incrociate (CMP Paese x Famiglia Politica) - FIX CRITICO
+if (file.exists(here("output", "grouped_predictions_cmp_parties.rds"))) {
+  grouped_preds <- readRDS(here("output", "grouped_predictions_cmp_parties.rds"))
 } else {
-  grouped_preds_parties <- avg_predictions(
-    model = nb_model,
-    variables = "issue_name",
-    by = "party_family",
-    newdata = df_sample,
+  # Usiamo predictions() accoppiato a datagrid() per generare correttamente le linee divise per partito
+  grouped_preds <- predictions(
+    model = zinb_model,
+    newdata = datagrid(
+      cmp_center = seq(min(df_sample$cmp_center, na.rm=TRUE), max(df_sample$cmp_center, na.rm=TRUE), length.out = 20),
+      party_family = unique(df_sample$party_family)
+    ),
     re.form = NA
   )
-  saveRDS(grouped_preds_parties, file = here("output", "grouped_predictions_parties.rds"))
+  saveRDS(grouped_preds, file = here("output", "grouped_predictions_cmp_parties.rds"))
 }
 
-if ("party_family" %in% names(grouped_preds_parties)) {
-  print(ggplot(grouped_preds_parties,
-               aes(x = estimate, y = reorder(party_family, estimate), color = party_family)) +
-    geom_point(position = position_dodge(width = 0.7)) +
-    geom_errorbarh(aes(xmin = conf.low, xmax = conf.high),
-                   height = 0.2, position = position_dodge(width = 0.7)) +
-    labs(title = "Predicted Number of Questions by Issue and Party Family",
-         x = "Predicted Questions per MEP-Issue-Year",
-         y = "Issue Area", color = "Party Family") +
-    theme_minimal())
-} else {
-  message("Skipping party family plot: pre-computed data lacks party_family column. Recompute to generate.")
-}
-
-# Grouped predictions: Issue x Country
-if (file.exists(here("output", "grouped_predictions_country.rds"))) {
-  grouped_preds_country <- readRDS(here("output", "grouped_predictions_country.rds"))
-} else {
-  grouped_preds_country <- avg_predictions(
-    model = nb_model,
-    variables = "issue_name",
-    by = "country",
-    newdata = df_sample,
-    re.form = NA
-  )
-  saveRDS(grouped_preds_country, file = here("output", "grouped_predictions_country.rds"))
-}
-
-if ("country" %in% names(grouped_preds_country)) {
-  print(ggplot(grouped_preds_country,
-               aes(x = estimate, y = reorder(country, estimate), color = country)) +
-    geom_point(position = position_dodge(width = 0.7)) +
-    geom_errorbarh(aes(xmin = conf.low, xmax = conf.high),
-                   height = 0.2, position = position_dodge(width = 0.7)) +
-    labs(title = "Predicted Number of Questions by Issue and Country",
-         x = "Predicted Questions per MEP-Issue-Year",
-         y = "Country", color = "Country") +
-    theme_minimal())
-} else {
-  message("Skipping country plot: pre-computed data lacks country column. Recompute to generate.")
-}
+ggplot(grouped_preds, aes(x = cmp_center, y = estimate, color = party_family, fill = party_family)) +
+  geom_line(size = 1) +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.08, color = NA) +
+  labs(title = "How Country Pressure Affects Party Families Differently",
+       x = "Claim-making Pressure (Centered)",
+       y = "Predicted Questions per MEP-Year", 
+       color = "Party Family", fill = "Party Family") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
