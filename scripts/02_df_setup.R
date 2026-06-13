@@ -312,8 +312,8 @@ df_merged_2 <- meps_expanded |>
       age >= 40 & age < 60 ~ "40-60",
       age >= 60 ~ "age > 60"
     ),
-  deve = case_when(
-      committee_most_time == "DEVE" ~ 1,
+  libe = case_when(
+      committee_most_time == "LIBE" ~ 1,
       TRUE ~ 0
     )
   )
