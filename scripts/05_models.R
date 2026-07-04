@@ -172,6 +172,35 @@ saveRDS(zinb_model4, here("output", "zinb_model4.rds"))
 model_comparison <- compare_performance(zinb_model1, zinb_model2, zinb_model3, zinb_model4, rank = TRUE)
 print(model_comparison)
 
+# Filter down to the absolute essentials and format for presentation
+essential_comparison <- model_comparison %>%
+  as_tibble() %>%
+  select(
+    Model = Name, 
+    RMSE, 
+    `AIC Weight` = AIC_wt, 
+    `BIC Weight` = BIC_wt, 
+    `Overall Score` = Performance_Score
+  ) %>%
+  mutate(
+    # Clean up model names for the final reader
+    Model = case_match(
+      Model,
+      "zinb_model1" ~ "M1: Baseline Individual Controls",
+      "zinb_model2" ~ "M2: Adding Minority Predictor",
+      "zinb_model3" ~ "M3: Fully Controlled + Country RE (Winner)",
+      "zinb_model4" ~ "M4: Country RE + Minority*CMP Interaction"
+    ),
+    # Format weights and scores to clean decimals/percentages
+    `AIC Weight` = round(`AIC Weight`, 3),
+    `BIC Weight` = round(`BIC Weight`, 3),
+    `Overall Score` = paste0(round(`Overall Score` * 100, 1), "%")
+  )
+
+# Display the clean table in the console
+print(essential_comparison)
+
+
 ###Il controllo del contesto (Modello 3 - Il Vincitore Globale): Mostri che inserendo i controlli macro-nazionali (discrimination_center, misery_index) e la struttura multilivello, il fit del modello tocca il suo picco massimo (Performance-Score del 69.31%). Questo è il tuo modello di riferimento per spiegare gli effetti principali.
 
 anova_results <- anova(zinb_model1, zinb_model2, zinb_model3, zinb_model4, test = "Chisq")

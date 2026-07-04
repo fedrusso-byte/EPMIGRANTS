@@ -1,3 +1,4 @@
+scripts/run_pipeline.R
 # run_pipeline.R — EPMigrants Data Pipeline Orchestrator
 # Runs all pipeline stages in separate R processes to manage memory.
 # Usage: Rscript scripts/run_pipeline.R
@@ -35,9 +36,7 @@ library(tidyverse)
 
 # 2. Definizione dei file da eseguire
 scripts_to_run <- c("01_import_questions.R", "02_df_setup.R", "03_country_level_vars.R",
-                    "04_models.R", "05_descriptives.R", "05b_download_problem_indicators.R",
-                    "06_responsiveness_data.R", "07_responsiveness_descriptives.R",
-                    "08c_responsiveness_models.R")
+                    "04_download_problem_indicators.R", "05_models.R", "06_model_comparison.r")
 
 # 3. Verifica preventiva dell'esistenza dei file
 for (s in scripts_to_run) {
@@ -77,12 +76,8 @@ cat("=== EUQuest Data Pipeline ===\n\n")
 run_step(1, "Importing and coding questions", "01_import_questions.R")
 run_step(2, "Constructing MEP-year-issue panel", "02_df_setup.R")
 run_step(3, "Adding country-level variables", "03_country_level_vars.R")
-run_step(4, "Fitting models and computing effects", "04_models.R")
-run_step(5, "Computing descriptive analyses", "05_descriptives.R")
-run_step(6, "Downloading Problem Indicators (Misery Index)", "05b_download_problem_indicators.R")
-run_step(7, "Responsiveness data preparation", "06_responsiveness_data.R")
-run_step(8, "Responsiveness descriptives", "07_responsiveness_descriptives.R")
-run_step(9, "Responsiveness models", "08c_responsiveness_models.R")
+run_step(4, "Downloading problem indicators", "04_download_problem_indicators.R")
+run_step(5, "Fitting models and computing effects", "05_models.R")
+run_step(6, "Comparing models", "06_model_comparison.r")
 
 cat("=== Pipeline complete ===\n")
-
