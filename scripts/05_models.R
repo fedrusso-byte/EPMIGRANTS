@@ -38,9 +38,11 @@ library(scales)
 dir.create(here("output"), showWarnings = FALSE, recursive = TRUE)
 dir.create(here("output", "figures"), showWarnings = FALSE, recursive = TRUE)
 
-# Helper: exponentiate and format model coefficients
+# Helper Corretto per estrarre SOLO gli effetti fissi condizionali
 tidy_exp_coefs <- function(model) {
   broom.mixed::tidy(model, component = "cond") %>%
+    # CRITICO: Teniamo solo gli effetti fissi, eliminando le stime della varianza casuale
+    filter(effect == "fixed") %>%
     mutate(
       exp_estimate = exp(estimate),
       estimate = round(estimate, 3),
@@ -67,11 +69,11 @@ df_merged_3 <- read_csv(here("output", "df_merged_3.csv"), show_col_types = FALS
   mutate(mid_year = as.integer(round(mid_year))) %>%
   left_join(problem_indicators, by = c("country", "mid_year" = "year"))
 
-# Sanity check sulle variabili ORIGINALI (Inclusa minority!)
+# CORREZIONE 1: Sanity check aggiornato con la nuova variabile dipendente pqs_discrimination
 stopifnot(
   "df_merged_3 is empty" = nrow(df_merged_3) > 0,
-  "Required columns missing" = all(c("n_subtopic_201", "total_questions", "gender",
-                                     "geographic_region", "party_family", "libe", "misery_index",
+  "Required columns missing" = all(c("pqs_discrimination", "total_questions", "gender",
+                                     "party_family", "libe", "misery_index",
                                      "discrimination_mean", "mipex_antidiscrimination_score", 
                                      "cmp_mean", "mep_id", "country", "minority") %in% names(df_merged_3))
 )
@@ -84,149 +86,174 @@ df_merged_3 <- df_merged_3 %>%
     mipex_center = mipex_antidiscrimination_score - mean(mipex_antidiscrimination_score, na.rm = TRUE)
   )
 
+# ==============================================================================
+# 2. PULIZIA STRUTTURALE DEI PAESI E FILTRO CASI (Listwise Deletion) ####
+# ==============================================================================
+message("   Pulizia preventiva dei paesi strutturalmente privi di dati MIPEX/CMP...")
 
-# ==============================================================================
-# 2. PULIZIA RIGOROSA (Identico N per tutti i modelli) - VERSIONE CORRETTA
-# ==============================================================================
-message("   Pulizia rigorosa (Listwise Deletion) sui predittori calcolati...")
+paesi_da_escludere <- df_merged_3 %>%
+  filter(legislative_term %in% c("8th", "9th")) %>%
+  group_by(country) %>%
+  summarise(
+    pct_na_mipex = mean(is.na(mipex_antidiscrimination_score)),
+    pct_na_cmp   = mean(is.na(cmp_mean)),
+    .groups = "drop"
+  ) %>%
+  filter(pct_na_mipex == 1 | pct_na_cmp == 1) %>%
+  pull(country)
+
+message(paste("🚫 Paesi esclusi strutturalmente (100% dati mancanti):", paste(paesi_da_escludere, collapse = ", ")))
 
 df_model_data <- df_merged_3 %>% 
-  filter(legislative_term %in% c("8th", "9th")) %>% # Raddrizzato l'operatore %in%
+  filter(legislative_term %in% c("8th", "9th")) %>% 
+  filter(!country %in% paesi_da_escludere) %>%
   drop_na(
-    n_subtopic_201, total_questions, gender, geographic_region, mep_id, country,
+    pqs_discrimination, total_questions, gender, mep_id, country,
     party_family, libe, minority, cmp_center, 
     misery_index, discrimination_center, mipex_center
   )
 
-# ==============================================================================
-# DIAGNOSTICA DELLE PERDITE DEI DATI (ATTRITION ANALYSIS)
-# ==============================================================================
-message("\n=== Analisi della perdita dei casi per Paese ===")
+message(paste("✅ N finale del dataset purificato per i modelli:", nrow(df_model_data)))
 
-df_iniziale <- df_merged_3 %>% 
-  filter(legislative_term %in% c("8th", "9th"))
-
-Tab_Iniziale <- table(df_iniziale$country) %>% as.data.frame() %>% rename(Paese = Var1, N_Iniziale = Freq)
-
-df_finale <- df_iniziale %>% 
-  drop_na(
-    n_subtopic_201, total_questions, gender, geographic_region, mep_id, country,
-    party_family, libe, minority, cmp_center, 
-    misery_index, discrimination_center, mipex_center
-  )
-
-Tab_Finale <- table(df_finale$country) %>% as.data.frame() %>% rename(Paese = Var1, N_Finale = Freq)
-
-analisi_perdite <- Tab_Iniziale %>%
-  left_join(Tab_Finale, by = "Paese") %>%
-  mutate(
-    N_Finale = coalesce(N_Finale, 0L),
-    Casi_Persi = N_Iniziale - N_Finale,
-    Percentuale_Persa = round((Casi_Persi / N_Iniziale) * 100, 1)
-  ) %>%
-  arrange(desc(Percentuale_Persa))
-
-print(analisi_perdite)
-
-message(paste("\nTotale casi INIZIALI (8th & 9th term):", nrow(df_iniziale)))
-message(paste("Totale casi FINALES per i modelli:", nrow(df_finale)))
-message(paste("Casi persi totali:", nrow(df_iniziale) - nrow(df_finale), 
-              "-(", round(((nrow(df_iniziale) - nrow(df_finale)) / nrow(df_iniziale)) * 100, 1), "%)"))
-
+)
 
 # ==============================================================================
-# 3. STIMA DEI MODELLI ####
+# 3. STIMA DEI MODELLI (Risoluzione globale problemi Hessiano / NaN) ####
 # ==============================================================================
 
-# Modello 1: Baseline Individual Controls (Senza geographic_region)
+# Definiamo un blocco di controllo robusto comune a tutti i modelli
+controllo_ottimizzatore <- glmmTMBControl(
+  optimizer = nlminb,
+  optArgs = list(iter.max = 3000, eval.max = 3000)
+)
+
+# Modello 1
 message("   Fitting zinb_model1...")
 zinb_model1 <- glmmTMB(
-   n_subtopic_201 ~ 
+   pqs_discrimination ~ 
        gender + misery_index + party_family + libe + cmp_center + discrimination_center + 
        offset(log(total_questions + 1)) + 
        (1 | mep_id) + (1 | country),   
    family = nbinom2,
    ziformula = ~ 1,            
-   data = df_model_data 
+   data = df_model_data,
+   control = controllo_ottimizzatore
 )
 saveRDS(zinb_model1, here("output", "zinb_model1.rds"))
 
-# Modello 2: Adding Minority Predictor
+# Modello 2
 message("   Fitting zinb_model2...")
 zinb_model2 <- glmmTMB(
-   n_subtopic_201 ~ 
-      gender + misery_index + party_family + libe + minority + 
-      offset(log(total_questions + 1)) + 
-      (1 | mep_id) + (1 | country),   
+   pqs_discrimination ~ 
+       gender + misery_index + party_family + libe + cmp_center + discrimination_center + 
+       minority +
+       offset(log(total_questions + 1)) + 
+       (1 | mep_id) + (1 | country),   
    family = nbinom2,
    ziformula = ~ 1,            
-   data = df_model_data 
+   data = df_model_data,
+   control = controllo_ottimizzatore
 )
 saveRDS(zinb_model2, here("output", "zinb_model2.rds"))
 
-# Modello 3: Fully Controlled + MIPEX
+# Modello 3
 message("   Fitting zinb_model3 (with MIPEX)...")
 zinb_model3 <- glmmTMB(
-   n_subtopic_201 ~ 
-      gender + misery_index + party_family + libe + minority + 
-      cmp_center + discrimination_center + mipex_center + 
-      offset(log(total_questions + 1)) + 
-      (1 | mep_id) + (1 | country),   
+   pqs_discrimination ~ 
+       gender + misery_index + party_family + libe + minority + 
+       cmp_center + discrimination_center + mipex_center + 
+       offset(log(total_questions + 1)) + 
+       (1 | mep_id) + (1 | country),   
    family = nbinom2,
    ziformula = ~ 1,            
-   data = df_model_data 
+   data = df_model_data,
+   control = controllo_ottimizzatore
 )
 saveRDS(zinb_model3, here("output", "zinb_model3.rds"))
 
-# Modello 4: Interazione con ottimizzatore corretto (Senza geographic_region)
-message("   Stima del Modello 4 (Risoluzione problema Hessiano)...")
+# Modello 4
+message("   Stima del Modello 4...")
 zinb_model4 <- glmmTMB(
-  n_subtopic_201 ~ 
+  pqs_discrimination ~ 
     gender + misery_index + party_family + libe + 
     discrimination_center + cmp_center + minority * mipex_center + 
     offset(log(total_questions + 1)) + 
-    (1 | country) + (1 | mep_id),
+    (1 | mep_id) + (1 | country),
   family = nbinom2,
   ziformula = ~ 1,           
   data = df_model_data,
-  control = glmmTMBControl(
-    optimizer = nlminb,
-    optArgs = list(iter.max = 2000, eval.max = 2000)
-  )
+  control = controllo_ottimizzatore
 )
 saveRDS(zinb_model4, here("output", "zinb_model4.rds"))
 
 
 # ==============================================================================
-# 4. CONFRONTO PERFORMANCE E ANOVA ####
+# 4. CONFRONTO PERFORMANCE E ANOVA (VERSIONE BLINDATA) ####
 # ==============================================================================
 message("   Generazione tabelle di confronto delle performance...")
 
-model_comparison <- compare_performance(zinb_model1, zinb_model2, zinb_model3, zinb_model4, rank = TRUE)
+model_comparison <- performance::compare_performance(
+  zinb_model1, zinb_model2, zinb_model3, zinb_model4, 
+  metrics = c("RMSE", "AIC", "BIC")
+)
 
 essential_comparison <- model_comparison %>%
   as_tibble() %>%
-  select(
-    Model = Name, 
-    RMSE, 
-    `AIC Weight` = AIC_wt, 
-    `BIC Weight` = BIC_wt, 
-    `Overall Score` = Performance_Score
-  ) %>%
   mutate(
-    Model = case_match(
-      Model,
-      "zinb_model1" ~ "M1: Baseline Individual Controls",
-      "zinb_model2" ~ "M2: Adding Minority Predictor",
-      "zinb_model3" ~ "M3: Fully Controlled + MIPEX + Country RE",
-      "zinb_model4" ~ "M4: Country RE + MIPEX + Minority*MIPEX Interaction" # Corretta etichetta!
+    Model_Label = case_when(
+      Name == "zinb_model1" ~ "M1: Baseline Individual Controls",
+      Name == "zinb_model2" ~ "M2: Adding Minority Predictor",
+      Name == "zinb_model3" ~ "M3: Fully Controlled + MIPEX + Country RE",
+      Name == "zinb_model4" ~ "M4: Country RE + MIPEX + Minority*MIPEX Interaction",
+      TRUE ~ Name
     ),
-    `AIC Weight` = round(`AIC Weight`, 3),
-    `BIC Weight` = round(`BIC Weight`, 3),
-    `Overall Score` = paste0(round(`Overall Score` * 100, 1), "%")
-  )
+    RMSE = round(RMSE, 3),
+    AIC = round(AIC, 1),
+    BIC = round(BIC, 1)
+  ) %>%
+  dplyr::select(Model = Model_Label, RMSE, AIC, BIC) %>%
+  arrange(AIC)
 
+print("--- Tabella Comparativa delle Performance ---")
 print(essential_comparison)
 
 anova_results <- anova(zinb_model1, zinb_model2, zinb_model3, zinb_model4, test = "Chisq")
+print("--- Test ANOVA Completo (Tutti i Modelli) ---")
 print(anova_results)
+
+# ==============================================================================
+# 6. ESTRAZIONE COEFFICIENTI E COSTRUZIONE TABELLA UNIFICATA (CORRETTO) ####
+# ==============================================================================
+message("   Estrazione e formattazione dei coefficienti per i 4 modelli...")
+
+# CORREZIONE: Usato lo standard `-term` per evitare problemi di parsing con `!term`
+coef_m1 <- tidy_exp_coefs(zinb_model1) %>% rename_with(~paste0(., "_M1"), -term)
+coef_m2 <- tidy_exp_coefs(zinb_model2) %>% rename_with(~paste0(., "_M2"), -term)
+coef_m3 <- tidy_exp_coefs(zinb_model3) %>% rename_with(~paste0(., "_M3"), -term)
+coef_m4 <- tidy_exp_coefs(zinb_model4) %>% rename_with(~paste0(., "_M4"), -term)
+
+tabella_coefficienti <- coef_m1 %>%
+  full_join(coef_m2, by = "term") %>%
+  full_join(coef_m3, by = "term") %>%
+  full_join(coef_m4, by = "term") %>%
+  rename(Predictor = term)
+
+print("--- Anteprima dei Coefficienti Unificati (Componente Condizionale) ---")
+print(head(tabella_coefficienti, 10))
+
+write_csv(tabella_coefficienti, here("output", "model_coefficients_comparison.csv"))
+message("🎉 Tabella dei coefficienti salvata in: output/model_coefficients_comparison.csv")
+
+# ------------------------------------------------------------------------------
+# Versione compatta per il terminale
+# ------------------------------------------------------------------------------
+tabella_compatta <- tabella_coefficienti %>%
+  mutate(
+    `M1 (Baseline)`   = if_else(!is.na(estimate_M1), paste0(estimate_M1, " (IRR: ", exp_estimate_M1, ") ", pval_str_M1), "-"),
+    `M2 (+ Minority)` = if_else(!is.na(estimate_M2), paste0(estimate_M2, " (IRR: ", exp_estimate_M2, ") ", pval_str_M2), "-"),
+    `M3 (+ MIPEX)`    = if_else(!is.na(estimate_M3), paste0(estimate_M3, " (IRR: ", exp_estimate_M3, ") ", pval_str_M3), "-"),
+    `M4 (Interaction)` = if_else(!is.na(estimate_M4), paste0(estimate_M4, " (IRR: ", exp_estimate_M4, ") ", pval_str_M4), "-")
+  ) %>%
+  dplyr::select(Predictor, `M1 (Baseline)`, `M2 (+ Minority)`, `M3 (+ MIPEX)`, `M4 (Interaction)`)
+
+knitr::kable(tabella_compatta, format = "markdown", caption = "Confronto dei Coefficienti e degli Incident Rate Ratios (IRR)")

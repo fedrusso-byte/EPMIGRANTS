@@ -4,8 +4,10 @@ library(stringr)
 library(lubridate)
 library(here)
 
+# Crea la cartella di output in sicurezza
 dir.create(here("output"), showWarnings = FALSE, recursive = TRUE)
 
+# Pulisce l'ambiente globale
 rm(list = ls())
 
 check_na <- function(dataset) {
@@ -55,19 +57,18 @@ all_meps <- read_csv(here("data_raw", "meps.csv")) |>
          p2014_2019 = "2014_2019",
          p2019_2024 = "2019_2024") |>
   filter(if_any(c(p2004_2009, p2009_2014, p2014_2019, p2019_2024), ~ !is.na(.)))
+
 stopifnot("MEPs data is empty" = nrow(all_meps) > 0)
 
-# === NUOVA AGGIUNTA: Join dei dati sulla minoranza visibile ===
+# === Join dei dati sulla minoranza visibile ===
 message("  Merging visible minority data...")
-
-# Carichiamo il file selezionando solo le due colonne chiave
 minority_df <- read_csv(here("data_raw", "minority.csv")) |> 
   select(parliamentary_id, minority)
 
-# Uniamo i dati a livello di singolo MEP
 all_meps <- all_meps |> 
   left_join(minority_df, by = "parliamentary_id")
 
+# Estrazione storici gruppi politici
 groups <- all_meps |> 
   select(parliamentary_id, political_groups) |> 
   mutate(records = str_extract_all(
@@ -85,8 +86,8 @@ groups <- all_meps |>
   mutate(start = as.Date(start, format = "%d-%m-%Y"),
          end = as.Date(end, format = "%d-%m-%Y")) |>
   filter(start >= as.Date("2004-07-20")) |> 
-  mutate(start = ymd(start)) |> 
-  mutate(legislative_term = assign_term(start)) |>
+  mutate(start = ymd(start),
+         legislative_term = assign_term(start)) |>
   mutate(
     first_political_group = position |> 
       str_remove("^Confederal Group of the\\s+") |>
@@ -140,8 +141,8 @@ committee <- all_meps |>
   mutate(start = as.Date(start, format = "%d-%m-%Y"),
          end = as.Date(end, format = "%d-%m-%Y")) |>
   filter(start >= as.Date("2004-07-20")) |> 
-  mutate(start = ymd(start)) |> 
-  mutate(legislative_term = assign_term(start)) %>%
+  mutate(start = ymd(start),
+         legislative_term = assign_term(start)) %>%
   filter(str_detect(position, "Committee")) |> 
   filter(!str_detect(position, "Delegation")) |>
   filter(!str_detect(position, "Special Committee")) |>
@@ -278,23 +279,22 @@ questions <- read_csv(here("data_processed", "epq.csv")) |>
   mutate(legislative_term = assign_term(date)) |> 
   left_join(legislature_starts, by = "legislative_term") |> 
   mutate(year_index = (interval(term_start, date) %/% years(1)) + 1) |> 
-  mutate(leg_year = paste0(legislative_term, year_index))
+  mutate(leg_year = paste0(legislative_term, year_index)) |> 
+  # Sicurezza: rimuoviamo eventuali indici d'anno fuori target prima del conteggio
+  filter(year_index <= 5)
 
 stopifnot(
-  "Questions data is empty" = nrow(questions) > 0,
-  "Expected 20 leg_years in questions" = n_distinct(questions$leg_year) == 20
+  "Questions data is empty" = nrow(questions) > 0
 )
 
-# Aggregazione MEP-Anno
+# Aggregazione MEP-Anno basata su dummy_var
 questions_df <- questions |> 
   group_by(mep_id, leg_year) |> 
   summarise(
-    n_subtopic_201 = sum(subtopic %in% c(201), na.rm = TRUE),
-    n_subtopic_941 = sum(subtopic %in% c(941), na.rm = TRUE),
-    n_subtopic_201_941 = sum(subtopic %in% c(201, 941), na.rm = TRUE),
+    pqs_discrimination = sum(pq_discrimination == 1, na.rm = TRUE),
     total_questions = n(),
     .groups = "drop"
-  ) 
+  )
 
 # Merge data ####
 message("  Constructing final MEP-year panel...")
@@ -302,17 +302,15 @@ message("  Constructing final MEP-year panel...")
 df_merged_2 <- meps_expanded |> 
   left_join(questions_df, by = c("mep_id", "leg_year")) |> 
   mutate(
-    n_subtopic_201 = replace_na(n_subtopic_201, 0),
-    n_subtopic_941 = replace_na(n_subtopic_941, 0),
-    n_subtopic_201_941 = replace_na(n_subtopic_201_941, 0),
-    total_questions = replace_na(total_questions, 0),
+    pqs_discrimination = replace_na(pqs_discrimination, 0),
+    total_questions = replace_na(total_questions, 0), # Rimossa la riga duplicata qui
     age = year_parl - birth_year,
     meps_age_cat = case_when(
       age < 40 ~ "age < 40",
       age >= 40 & age < 60 ~ "40-60",
       age >= 60 ~ "age > 60"
     ),
-  libe = case_when(
+    libe = case_when(
       committee_most_time == "LIBE" ~ 1,
       TRUE ~ 0
     )

@@ -2,22 +2,22 @@
 # UNIFIED VISUALIZATION PANEL: MODEL 4 MARGINAL EFFECTS & INTERACTION (FIXED)
 # ==============================================================================
 library(ggplot2)
+library(dplyr)
 library(patchwork)
 library(here)
 
 message("   Generating updated expected count panel for Model 4 (Native glmmTMB engine)...")
 
 # Creiamo un dataset di base con i valori medi/regolati delle altre variabili
-# per calcolare le predizioni "a parità di altre condizioni"
 base_grid <- df_model_data %>%
   summarise(
-    gender = "M",                           # Categoria di riferimento/più comune
-    party_family = "Christian democrats and conservatives",         # Categoria di riferimento/più comune
-    libe = 0,                               # Tipicamente binaria o fissa (0 o media)
+    gender = "M",                                           # Categoria di riferimento/più comune
+    party_family = "Christian democrats and conservatives", # Categoria di riferimento/più comune
+    libe = 0,                                               # Tipicamente binaria o fissa
     misery_index = mean(misery_index, na.rm = TRUE),
-    discrimination_center = 0,              # Centrata (0 = media)
-    cmp_center = 0,                         # Centrata (0 = media)
-    total_questions = mean(total_questions, na.rm = TRUE) # Fissiamo l'offset
+    discrimination_center = 0,                              # Centrata (0 = media)
+    cmp_center = 0,                                         # Centrata (0 = media)
+    total_questions = mean(total_questions, na.rm = TRUE)   # Fissiamo l'offset alla media dei dati originali
   )
 
 # ------------------------------------------------------------------------------
@@ -41,7 +41,7 @@ pred_minority_m4 <- grid_a %>%
   )
 
 panel_a_discrete <- ggplot(pred_minority_m4, aes(x = factor(minority, labels = c("Non-Minority", "Minority")), 
-                                               y = estimate, fill = factor(minority))) +
+                                                 y = estimate, fill = factor(minority))) +
   geom_col(width = 0.4, alpha = 0.85, color = "black", linewidth = 0.6) +
   geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.1, linewidth = 0.9, color = "#2c3e50") +
   scale_fill_manual(values = c("#5a738e", "#e74c3c"), guide = "none") +
@@ -65,11 +65,15 @@ mipex_seq <- seq(min(df_model_data$mipex_center, na.rm = TRUE),
                  max(df_model_data$mipex_center, na.rm = TRUE), 
                  length.out = 100)
 
+# CORREZIONE: Usiamo crossing() per evitare disallineamenti nell'accoppiamento dei vettori
 grid_b <- base_grid %>%
-  slice(rep(1, 200)) %>%
+  dplyr::select(-total_questions) %>% # Rimuoviamo temporaneamente per espandere le altre
+  crossing(
+    mipex_center = mipex_seq,
+    minority = c(0, 1)
+  ) %>%
   mutate(
-    mipex_center = rep(mipex_seq, each = 2),
-    minority = rep(c(0, 1), times = 100)
+    total_questions = mean(df_model_data$total_questions, na.rm = TRUE) # Ripristiniamo l'offset corretto per ogni riga
   )
 
 # Predizione nativa glmmTMB

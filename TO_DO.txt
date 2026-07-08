@@ -1,0 +1,22 @@
+# 📌 NOTA DI LAVORO: Risoluzione Problemi di Convergenza nei Modelli GLMM (05_models.R)
+
+## ⚠️ Problema Riscontrato
+Durante l'esecuzione dello script `05_models.R` (Modelli Zero-Inflated Binomiale Negativa Multilivello), i modelli **M1** e **M3** generano errori standard uguali a `NaN`. Questo indica un fallimento nel calcolo della matrice Hessiana dovuto all'instabilità numerica causata dal doppio livello di Random Effects incrociati/annidati `(1 | mep_id) + (1 | country)`.
+
+I modelli **M2** e **M4** convergono correttamente. Il test ANOVA mostra che l'interazione nel Modello 4 (`minority:mipex_center`) è statisticamente significativa ($p = 0.024$).
+
+---
+
+## 🛠️ Azioni da Fare al Rientro
+
+Se i calcoli in corso hanno fallito o mostrano ancora `NaN`, procedere con una delle seguenti soluzioni (in ordine di priorità):
+
+### Opzione 1: Uniformare l'ottimizzatore avanzato (Tentativo Standard)
+Forzare l'uso dell'ottimizzatore `nlminb` con un numero elevato di iterazioni su **tutti e quattro i modelli** (e non solo su M4).
+* **Cosa fare:** Modificare la sezione 3 del codice impostando:
+  ```r
+  controllo_ottimizzatore <- glmmTMBControl(
+    optimizer = nlminb,
+    optArgs = list(iter.max = 3000, eval.max = 3000)
+  )
+  # Aggiungere `control = controllo_ottimizzatore` a tutti i modelli glmmTMB()

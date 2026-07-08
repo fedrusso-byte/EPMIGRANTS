@@ -4,6 +4,7 @@ library(purrr)
 library(readr)
 library(writexl)
 library(here)
+library(stringr) 
 
 dir.create(here("data_processed"), showWarnings = FALSE, recursive = TRUE)
 
@@ -51,6 +52,26 @@ stopifnot(
   "Join produced empty result" = nrow(epq) > 0,
   "All major codes are NA after join" = !all(is.na(epq$major))
 )
+
+# Create a dummy variable with value 1 when variable "subtopic" is 1 and at the same time the variable "text" does not contain the terms "christian" OR "Africa"
+
+
+epq <- epq %>%
+  mutate(
+    pq_discrimination = case_when(
+      # Condizione: subtopic è "201" E il testo NON contiene "christian" o "africa"
+      subtopic == "201" & !str_detect(subject, pattern = "(?i)christian|africa|palestin|Second World War|hamas|danube|turkey|instanbul|india") ~ 1,
+      
+      # In tutti gli altri casi, assegna 0
+      TRUE ~ 0
+    )
+  )
+
+
+message("  Writing ", nrow(epq), " questions to data_processed/")
+write_csv(epq, here("data_processed", "epq.csv"))
+write_rds(epq, here("data_processed", "epq.rds"))
+
 
 message("  Writing ", nrow(epq), " questions to data_processed/")
 write_csv(epq, here("data_processed", "epq.csv"))
