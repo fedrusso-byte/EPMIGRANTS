@@ -114,6 +114,8 @@ df_model_data <- df_merged_3 %>%
   )
 
 message(paste("✅ N finale del dataset purificato per i modelli:", nrow(df_model_data)))
+saveRDS(df_model_data, here("output", "df_model_data.rds"))
+message("   Dataset for models saved to: output/df_model_data.rds")
 
 
 # ==============================================================================

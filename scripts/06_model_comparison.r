@@ -3,8 +3,13 @@
 # ==============================================================================
 library(ggplot2)
 library(dplyr)
+library(tidyr)
 library(patchwork)
 library(here)
+
+message("   Loading model and data for visualization...")
+df_model_data <- readRDS(here("output", "df_model_data.rds"))
+zinb_model4 <- readRDS(here("output", "zinb_model4.rds"))
 
 message("   Generating updated expected count panel for Model 4 (Native glmmTMB engine)...")
 
