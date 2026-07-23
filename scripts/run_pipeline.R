@@ -1,4 +1,4 @@
-scripts/run_pipeline.R
+# scripts/run_pipeline.R
 # run_pipeline.R — EPMigrants Data Pipeline Orchestrator
 # Runs all pipeline stages in separate R processes to manage memory.
 # Usage: Rscript scripts/run_pipeline.R
@@ -35,8 +35,10 @@ if (!requireNamespace("tidyverse", quietly = TRUE)) {
 library(tidyverse)
 
 # 2. Definizione dei file da eseguire
+# Include all versions of model scripts for verification
 scripts_to_run <- c("01_import_questions.R", "02_df_setup.R", "03_country_level_vars.R",
-                    "04_download_problem_indicators.R", "05_models.R", "06_model_comparison.r")
+                    "04_download_problem_indicators.R", "05_models.R", "05_models_FE.r", 
+                    "05_models_Bayesian.R", "06_model_comparison.r")
 
 # 3. Verifica preventiva dell'esistenza dei file
 for (s in scripts_to_run) {
@@ -77,7 +79,15 @@ run_step(1, "Importing and coding questions", "01_import_questions.R")
 run_step(2, "Constructing MEP-year-issue panel", "02_df_setup.R")
 run_step(3, "Adding country-level variables", "03_country_level_vars.R")
 run_step(4, "Downloading problem indicators", "04_download_problem_indicators.R")
-run_step(5, "Fitting models and computing effects", "05_models.R")
-run_step(6, "Comparing models", "06_model_comparison.r")
+
+# STEP 5: Choose WHICH model version to run (Uncomment only ONE)
+# run_step(5, "Fitting models (Standard)", "05_models.R")
+# run_step(5, "Fitting models (Fixed Effects)", "05_models_FE.r")
+run_step(5, "Fitting models (Bayesian)", "05_models_Bayesian.R")
+
+# STEP 6: Choose WHICH model version to compare (Uncomment only ONE)
+#run_step(6, "Comparing models", "06_model_comparison.R")
+run_step(6, "Comparing models", "06_model_comparison_Bayesian.R")
+
 
 cat("=== Pipeline complete ===\n")

@@ -1,3 +1,4 @@
+
 library(dplyr)
 library(tidyr)
 library(purrr)
@@ -59,8 +60,11 @@ stopifnot(
 epq <- epq %>%
   mutate(
     pq_discrimination = case_when(
-      # Condizione: subtopic è "201" E il testo NON contiene "christian" o "africa"
-      subtopic == "201" & !str_detect(subject, pattern = "(?i)christian|africa|palestin|Second World War|hamas|danube|turkey|instanbul|india") ~ 1,
+      # Condizione: subtopic è "201" E il testo NON contiene termini relativi a:
+      # 1. Contesti extra-europei (Africa, Asia, Medio Oriente, etc.)
+      # 2. Narrative di "discriminazione inversa" o critica alle politiche di anti-discriminazione (tipiche della destra)
+      # 3. Temi religiosi specifici o conflitti storici/attuali non legati alla discriminazione etnica interna UE
+      subtopic == "201" & !str_detect(subject, pattern = "(?i)christian|africa|palestin|Second World War|hamas|danube|turkey|istanbul|india|china|usa|america|asia|israel|iran|syria|middle east|native|patriot|political correctness|woke|reverse discrimination|traditional values|gender ideology|quotas") ~ 1,
       
       # In tutti gli altri casi, assegna 0
       TRUE ~ 0
