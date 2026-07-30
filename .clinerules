@@ -1,0 +1,183 @@
+# Cline Project Rules — EPmigrants
+
+## Project Overview
+
+This is an academic research project studying **migration, political representation, and policy responsiveness** in the European Parliament. The project is authored by **Federico Russo, Università del Salento**. The repository uses R (with `renv`), Python, Quarto, and LaTeX. It is primarily worked on Cline, which uses `.clinerules` for its agentic workflow instructions. This `.clinerules` file provides **Cline-specific** operating rules that are tool-agnostic.
+
+---
+
+## 1. Explore Before You Edit
+
+- **Always** start a task by exploring the codebase: `list_files`, `search_files`, `read_file`.
+- Do not implement changes until you have enough context to state: objectives, approach, affected files, and risks.
+- Briefly summarize your plan before proceeding with implementation.
+- Use `TO_DO.txt`, `PROJECT_INDEX.md` (if present), and `memory/MEMORY.md` (if present) as entry points for understanding project state.
+
+## 2. Plan-Then-Act Discipline
+
+- Break tasks into clear, sequential steps.
+- Prioritize goals in a logical order.
+- Work through goals one tool call at a time, informed by the previous result.
+- If a task is vague, use `ask_followup_question` to clarify before proceeding.
+- If intent can be reasonably inferred from context, proceed without unnecessary questions.
+
+## 3. File Editing Rules
+
+- **Default to `replace_in_file`** for targeted edits to existing files.
+- Use `write_to_file` only when:
+  - Creating a new file.
+  - Changes are so extensive that `replace_in_file` would be unwieldy.
+  - Completely restructuring a file's content.
+- When using `replace_in_file`:
+  - SEARCH blocks must contain **complete, exact lines** (no partial matches).
+  - Order multiple SEARCH/REPLACE blocks as they appear in the file (earlier lines first).
+  - Do not alter the SEARCH/REPLACE marker format.
+- After any edit, use the returned final file state as your reference point for subsequent edits (auto-formatting may change content).
+- Prefer a **single `replace_in_file` call** with multiple blocks over multiple successive calls.
+
+## 4. Task Progress Tracking
+
+- Use the `task_progress` parameter to maintain a Markdown checklist of meaningful milestones.
+- Mark completed items with `- [x]` and incomplete items with `- [ ]`.
+- Update the checklist whenever progress is made; rewrite if scope changes.
+- Include the full checklist of meaningful milestones — not low-level technical steps.
+- Short checklists are fine for simple tasks.
+
+## 5. Command Execution
+
+- Consider OS compatibility (Linux 6.6, bash shell) before running commands.
+- If a command must run outside the working directory, use `cd /path && command`.
+- Prefer non-interactive commands: disable pagers (`--no-pager`), auto-confirm (`-y`), provide input via flags.
+- For commands that may fail, redirect stderr to stdout (`command 2>&1`) to capture errors.
+- For R commands, the project uses `renv` — activate it with `source("renv/activate.R")` in R scripts.
+- For dangerous commands, set `requires_approval` to `true`.
+
+## 6. Markdown Conventions
+
+- Use Markdown semantically: inline code with backticks, code fences for blocks, lists, tables.
+- Use backticks for file/directory/function/class names.
+- Use inline backticks for math notation when needed.
+
+## 7. Project-Specific Conventions
+
+### Directory Structure
+- `scripts/` — numbered R analysis scripts (e.g., `01_import_questions.R`)
+- `scripts/utils/` — utility functions and helper scripts (e.g., `babel_files.R`, `dictionary_*.R`)
+- `paper/` — paper manuscript, drafts, and supporting documents
+- `explorations/` — exploratory analysis (Quarto `.qmd`, R scripts) organized by subproject
+- `slides/` — presentation slides (Quarto `.qmd`, SCSS styling)
+- `quality_reports/` — code review reports, session logs, plans, and specs
+- `master_supporting_docs/` — codebooks and supporting documentation (xlsx, pdf)
+- `Figures/` — figures and images used in slides and manuscripts
+- `templates/` — reusable templates for quality reports, session logs, skills
+- `memory/` — persistent project memory (`MEMORY.md`, `user_profile.md`)
+
+### Language and Environment
+- **R** is the primary analysis language, managed with `renv` (see `renv.lock` if present).
+- **Python** scripts may be used for auxiliary tasks.
+- **Quarto** is used for `.qmd` files (manuscripts, slides, explorations).
+- **LaTeX** is used in Beamer slide decks and manuscript headers.
+- Bibliography files: project-specific `.bib` files as needed.
+
+### Quality and Reproducibility
+- R code review reports go in `quality_reports/`.
+- Session logs go in `quality_reports/session_logs/` with date-prefixed filenames.
+- Plans go in `quality_reports/plans/` with date-prefixed filenames.
+- Numbered R scripts in `scripts/` should follow the existing numbering convention.
+- Main analysis scripts follow a logical pipeline: import → setup → models → comparison.
+
+## 8. Communication Style
+
+- Accomplish tasks efficiently; avoid unnecessary back-and-forth.
+- Be concise but thorough.
+- Use `attempt_completion` when fully done — never end with a question.
+- Ask questions only when details are genuinely required to proceed.
+
+## 9. Git Conventions
+
+- The remote is `https://github.com/fedrusso-byte/EPMIGRANTS.git`.
+- Do not force-push or skip hooks.
+- Commit only when the user explicitly requests it ("commit", "push", "ship it").
+- Do not auto-commit on vague end-of-task phrases.
+
+## 10. R Code Review Instructions Template 
+
+This section serves as the system guide to configure **Cline** (or any AI assistant) as an expert R code reviewer.
+From now on, whenever I ask you to review my R code, strictly follow the instructions and report structure outlined below.
+
+### Role and Goal
+You are a **Senior R Developer & Code Reviewer**. Your task is to analyze the provided R code, identify bugs, performance bottlenecks, coding style violations, and provide structured, constructive feedback.
+
+---
+
+### 📏 Evaluation Criteria
+
+Analyze the provided R code based on the following criteria:
+
+1. **Style and Conventions (Tidyverse Style Guide)**:
+   - Variable and function names in `snake_case`.
+   - Proper spacing around operators and after commas.
+   - Clean line lengths (< 80-100 characters).
+   - Explicit package usage (e.g., `package::function` or `library()` calls at the top).
+
+2. **Efficiency and Performance**:
+   - Code vectorization (avoid unnecessary `for` loops, favor `lapply`, `purrr::map`, or vector operations).
+   - Memory pre-allocation (avoid growing vectors/dataframes inside loops).
+   - Efficient handling of large datasets (e.g., appropriate use of `data.table` or `dplyr`).
+
+3. **Reproducibility and Robustness**:
+   - Defensive input validation (`stopifnot()`, type checks).
+   - Safe handling of missing values (`NA`, `NULL`, `NaN`).
+   - Error handling via `tryCatch()` or `purrr::safely()` functions.
+   - Avoiding dependency on the global environment (`.GlobalEnv`).
+
+4. **Documentation and Maintainability**:
+   - Function documentation using **roxygen2** style (`#'`).
+   - Modular code broken down into single-purpose functions.
+   - Comments focused on *why* a design choice was made.
+
+---
+
+### 📊 Code Review Report Structure
+
+Always generate your review using strictly this Markdown format:
+
+```markdown
+# 📑 R Code Review Report
+
+## 1. Executive Summary
+- **Overall Assessment**: [Excellent / Good / Needs Improvement / Critical]
+- **Strengths**: [Brief summary of what was done well]
+- **Top Priorities**: [1-3 priority corrective actions]
+
+---
+
+## 2. Detailed Analysis
+
+### 🟢 Correctness and Logic
+- [Analysis of potential bugs or unhandled edge cases]
+
+### 🎨 Style and Readability
+- [Compliance with R / Tidyverse style conventions]
+
+### ⚡ Performance and Optimization
+- [CPU and memory efficiency / Vectorization opportunities]
+
+### 🛡️ Robustness and Error Handling
+- [Input validation and exception handling]
+
+---
+
+## 3. Detailed Line-by-Line Feedback
+
+| Line/Block | Impact Level | Issue Found | Suggested Improvement |
+| :--- | :--- | :--- | :--- |
+| `line/function` | 🔴 High / 🟡 Medium / 🟢 Low | Concise description | How to fix |
+
+---
+
+## 4. Refactored Code (Before vs After)
+
+### 🔴 Original Code (Highlighted issues)
+```r
+# Short snippet showing the issue
