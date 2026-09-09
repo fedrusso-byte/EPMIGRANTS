@@ -1,6 +1,6 @@
 # EPmigrants — Project Index
 
-**Last updated:** 2026-07-30
+**Last updated:** 2026-09-09
 **Project:** "Migration, Political Representation, and Policy Responsiveness in the European Parliament"
 **Author:** Federico Russo, Università del Salento
 **Repository:** https://github.com/fedrusso-byte/EPMIGRANTS.git
@@ -24,10 +24,10 @@
 
 | Document | Location | Status | Action Needed |
 |----------|----------|--------|---------------|
-| Research specification | – | PENDING | To be created |
-| Paper outline | – | PENDING | To be created |
-| Implementation plan | – | PENDING | To be created |
-| Next steps plan | – | PENDING | To be created |
+| Research specification | `quality_reports/research_spec_minority_attention.md` | CURRENT | Shared design reference; §7 (H3 theory) under revision following SISP 2026 feedback |
+| Paper outline | – | PENDING | To be created — next drafting task (see next steps plan) |
+| Implementation plan | `quality_reports/plans/2026-09-09_minority-attention-implementation.md` | CURRENT | Active — Phase A hand-coding (Zeynep) + H3 theory revision in progress |
+| Next steps plan | `quality_reports/plans/2026-09-09_minority-attention-next-steps.md` | CURRENT | Roadmap: 7th-term extension, H3 theory revision, open decisions, backlog |
 
 ## 2. Data Pipeline Scripts
 
@@ -58,6 +58,7 @@
 | My dictionary | `scripts/utils/my_dict.R` | CURRENT | Custom dictionary |
 | Check face validity | `scripts/utils/check_face_validity_problems.R` | CURRENT | Validity checks for problem indicators |
 | Minor checkings / sample creation | `scripts/utils/minor-checkings_create-samples.R` | CURRENT | Data quality checks and sample creation |
+| Minority coding worksheet (6th/7th terms) | `scripts/utils/minority_coding_worksheet_6th7th.R` | CURRENT | Generates `data/minorities{7th,6th}_tocode.{csv,xlsx}` — 468 (7th term) + 749 (6th term) MEPs to hand-code for minority background |
 
 ## 4. Explorations
 
@@ -101,7 +102,7 @@
 
 | File | Location | Status | Action Needed |
 |------|----------|--------|---------------|
-| Project bibliography | `ep.bib` | PENDING | To be created/populated |
+| Project bibliography | `ep.bib` | PENDING | To be created/populated — will absorb new references from the H3 theory revision (see next steps plan) |
 
 ## 11. Slides and Presentations
 
@@ -115,6 +116,7 @@
 |----------|----------|--------|-------|
 | Draft manuscript | `paper/Draft_MEP Article.docx` | DRAFT | Word document draft |
 | PDF | `paper/MentesogluTardivo_Russo_CAP2026.pdf` | CURRENT | CAP2026 conference paper |
+| Updated manuscript (Markdown) | `paper/MEPArticle_Updated.md` | DRAFT | Working draft with current results; H3 theory section pending Zeynep's revision |
 
 ## 13. Project Memory
 
@@ -132,7 +134,7 @@
    - Option 2: Simplify random effects structure
    - Option 3: Bayesian approach as primary specification
 
-2. **Research design documentation** — Create formal research specification document
+2. **Paper outline** — Last remaining research-design document; specification, implementation plan, and next steps plan are now drafted (see §1)
 
 3. **Literature review** — Populate `quality_reports/` with systematic literature reviews
 
@@ -141,6 +143,10 @@
 5. **Output organization** — Establish output file naming conventions and structure
 
 6. **Bibliography** — Create and populate `ep.bib` with project references
+
+7. **7th-term extension (minority hand-coding) — ACTIVE** — Zeynep Mentesoglu Tardivo hand-codes the 468 7th-term MEPs in `data/minorities7th_tocode.xlsx`/`.csv` (optionally the 749 6th-term MEPs) and strengthens the H3 theory following SISP 2026 feedback; Federico Russo merges the coding into `data_raw/minority.csv`, widens the term filter in `scripts/05_models_Bayesian.R` (~line 51), and re-runs the pipeline. Full details: `quality_reports/plans/2026-09-09_minority-attention-implementation.md`. Data-quality caveats in TO_DO.txt (3 hand-coded MEPs missing from `minority.csv`; `national_parties` mis-aligned for ~53 MEPs in `meps.csv`; Latin-1 encoding of `minorities8th9th.csv`).
+
+8. **SISP 2026 conference feedback — NEEDS INPUT** — Record the discussant feedback on the H3 theory ("too thin") in `quality_reports/2026-09-09_sisp-feedback.md`; required input for Zeynep's theory revision.
 
 ---
 
@@ -158,13 +164,17 @@ EPmigrants/
 │   ├── #07_Exploratory analysis.r
 │   ├── main.R
 │   ├── run_pipeline.R
-│   └── utils/ (8 utility scripts)
+│   └── utils/ (9 utility scripts)
 ├── paper/
+│   ├── MEPArticle_Updated.md (working draft)
 │   ├── Draft_MEP Article.docx
 │   └── MentesogluTardivo_Russo_CAP2026.pdf
 ├── explorations/ (empty)
 ├── slides/ (empty)
-├── quality_reports/ (empty)
+├── quality_reports/
+│   ├── bayesian_model_results_report.md
+│   ├── 2026-09-09_sisp-feedback.md
+│   └── plans/ (implementation + next steps plans)
 ├── output/ (to be created)
 ├── memory/
 │   ├── MEMORY.md

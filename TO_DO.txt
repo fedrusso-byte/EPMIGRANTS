@@ -20,3 +20,34 @@ Forzare l'uso dell'ottimizzatore `nlminb` con un numero elevato di iterazioni su
     optArgs = list(iter.max = 3000, eval.max = 3000)
   )
   # Aggiungere `control = controllo_ottimizzatore` a tutti i modelli glmmTMB()
+  ```
+
+---
+
+# 📌 NOTA DI LAVORO: Estensione alla VI/VII legislatura (aggiornato 2026-09-09)
+
+## 🎯 Obiettivo
+Estendere l'analisi ad almeno la **VII legislatura (2009–2014)**. Verificato che tutti i dati necessari sono già disponibili per quel periodo — biografie (`data/meps.csv`), gruppi e commissioni (`data/meps_com_gr.csv`), domande parlamentari già classificate CAP/LLaMA (`epq_3.0.csv`, 1994–2025), MIPEX (2007–2024), variabili country-level (2004–2024) e pannello MEP-anno (`02_df_setup.R`). **L'unico dato mancante è il coding del background minoritario** per i MEP non presenti in `data_raw/minority.csv`.
+
+## ✅ Fatto (2026-09-09)
+Creati i fogli di lavoro per il coding manuale, con dati biografici, partito nazionale del periodo, gruppo e commissione; colonne vuote `minority`, `notes`, `link` nello stesso formato di `minorities8th9th.csv`:
+- `data/minorities7th_tocode.csv` / `.xlsx` — **468 MEP della VII legislatura da codificare** (priorità)
+- `data/minorities6th_tocode.csv` / `.xlsx` — **749 MEP della VI legislatura da codificare** (opzionale)
+- Generati da `scripts/utils/minority_coding_worksheet_6th7th.R` (rielabile al bisogno)
+
+## 👥 Divisione del Lavoro e Documenti di Riferimento (2026-09-09)
+
+- **Zeynep**: coding manuale dei 468 MEP della VII legislatura dal foglio `data/minorities7th_tocode.{csv,xlsx}` **+ potenziamento della teoria di H3** (feedback conferenza SISP 2026: teoria troppo sottile).
+- **Federico**: merge del coding in `data_raw/minority.csv` e riesecuzione delle analisi.
+- **Cline**: bozze dei documenti, automazione del merge, report e cross-reference.
+- Documenti: specifica di ricerca → `quality_reports/research_spec_minority_attention.md`; piano di implementazione → `quality_reports/plans/2026-09-09_minority-attention-implementation.md`; passi successivi → `quality_reports/plans/2026-09-09_minority-attention-next-steps.md`; memo feedback SISP (da compilare) → `quality_reports/2026-09-09_sisp-feedback.md`.
+
+## ⏳ Azioni da Fare
+1. Completare il coding manuale dei 468 MEP della VII legislatura (eventualmente anche i 749 della VI).
+2. Unire i risultati al file master `data_raw/minority.csv` (e aggiornare `euquest`).
+3. Allargare il filtro dei termini in `scripts/05_models_Bayesian.R` (riga ~51) da `c("8th", "9th")` a `c("7th", "8th", "9th")` e rieseguire la pipeline.
+
+## ⚠️ Problemi di Qualità Dati da Riconciliare
+1. **3 MEP hand-coded assenti da `minority.csv`**: Max ORVILLE (234344, FRA), Guy LAVOCAT (251859, FRA), Leopoldo LÓPEZ GIL (197777, SPA) — presenti in `minorities8th9th.csv` con `minority=1` ma mai inseriti nel file master.
+2. **`national_parties` disallineato in `meps.csv`** per ~53 MEP della VI legislatura (id ≈ 28380–29100, con alcune eccezioni): es. MEP polacchi con storie di partito greche. I fogli di lavoro azzerano già questi valori (NA); da riparare a monte in `euquest/data_raw/meps.csv`.
+3. **`minorities8th9th.csv` è in encoding Latin-1/Windows** (non UTF-8): convertire quando si uniscono i risultati.

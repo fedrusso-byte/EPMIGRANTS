@@ -74,6 +74,9 @@ output/
 .DS_Store
 Thumbs.db
 
+# Windows NTFS alternate data streams (Zone.Identifier artifacts)
+*:Zone.Identifier
+
 # Claude Code local files (not shared across machines)
 .claude/settings.local.json
 .claude/state/

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bayesian Model Results Report</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+            background-color: #f9f9f9;
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+            border-bottom: 1px solid #eaecef;
+            padding-bottom: 0.3em;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+            background-color: #fff;
+        }
+        table, th, td {
+            border: 1px solid #dfe2e5;
+        }
+        th, td {
+            padding: 6px 13px;
+            text-align: left;
+        }
+        tr:nth-child(even) {
+            background-color: #f6f8fa;
+        }
+        code {
+            background-color: rgba(27,31,35,0.05);
+            border-radius: 3px;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 85%;
+            padding: 0.2em 0.4em;
+        }
+        .container {
+            background-color: #fff;
+            padding: 40px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        hr {
+            border: 0;
+            border-top: 1px solid #eaecef;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Bayesian Model Results Report</h1>
+        
+        <h2>1. Executive Summary</h2>
+        <p>The Bayesian analysis examines the interaction between MEP characteristics and the responsiveness of policy positions to external indicators (CMP and MIPEX).</p>
+        <p><strong>Key Finding:</strong> There is a strong and statistically significant positive effect of being a <strong>Right-Wing Nationalist</strong> and <strong>Liberal</strong> on the responsiveness of policy positions. Notably, the "minority" status shows a high positive estimate in the CMP interaction, suggesting that MEPs from minority groups may exhibit higher sensitivity to these indicators.</p>
+        
+        <hr>
+        
+        <h2>2. Detailed Model Analysis</h2>
+        
+        <h3>📈 CMP Interaction Model</h3>
+        <p>The CMP Interaction model evaluates how MEP attributes influence the relationship between the CMP center and policy positions.</p>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Variable</th>
+                    <th>Estimate</th>
+                    <th>95% Credible Interval</th>
+                    <th>Significance</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Right-Wing Nationalists</strong></td>
+                    <td><code>0.600</code></td>
+                    <td><code>[0.222, 0.972]</code></td>
+                    <td>✅ Significant</td>
+                </tr>
+                <tr>
+                    <td><strong>Liberals</strong></td>
+                    <td><code>0.492</code></td>
+                    <td><code>[0.146, 0.830]</code></td>
+                    <td>✅ Significant</td>
+                </tr>
+                <tr>
+                    <td><strong>Minority Status</strong></td>
+                    <td><code>1.059</code></td>
+                    <td><code>[0.080, 1.917]</code></td>
+                    <td>✅ Significant</td>
+                </tr>
+                <tr>
+                    <td><strong>Eurosceptic Cons.</strong></td>
+                    <td><code>0.224</code></td>
+                    <td><code>[-0.177, 0.620]</code></td>
+                    <td>❌ Not Sig.</td>
+                </tr>
+                <tr>
+                    <td><strong>Misery Index</strong></td>
+                    <td><code>-0.005</code></td>
+                    <td><code>[-0.023, 0.013]</code></td>
+                    <td>❌ Not Sig.</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <p><strong>Observations:</strong></p>
+        <ul>
+            <li>The highest positive effect is seen among <strong>minority MEPs</strong> (β ≈ 1.06), indicating a potentially stronger alignment or responsiveness.</li>
+            <li><strong>Right-Wing Nationalists</strong> (β ≈ 0.60) and <strong>Liberals</strong> (β ≈ 0.49) are also significantly positive, suggesting these groups are more responsive to the CMP metrics than the baseline.</li>
+        </ul>
+        
+        <h3>📈 MIPEX Interaction Model</h3>
+        <p>The MIPEX Interaction model looks at the responsiveness to the MIPEX (migration policy) indicators.</p>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Variable</th>
+                    <th>Estimate</th>
+                    <th>95% Credible Interval</th>
+                    <th>Significance</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Right-Wing Nationalists</strong></td>
+                    <td><code>0.525</code></td>
+                    <td><code>[0.158, 0.899]</code></td>
+                    <td>✅ Significant</td>
+                </tr>
+                <tr>
+                    <td><strong>Liberals</strong></td>
+                    <td><code>0.429</code></td>
+                    <td><code>[0.080, 0.751]</code></td>
+                    <td>✅ Significant</td>
+                </tr>
+                <tr>
+                    <td><strong>Minority Status</strong></td>
+                    <td><code>0.327</code></td>
+                    <td><code>[-0.596, 1.152]</code></td>
+                    <td>❌ Not Sig.</td>
+                </tr>
+                <tr>
+                    <td><strong>Minority × MIPEX Center</strong></td>
+                    <td><code>0.066</code></td>
+                    <td><code>[0.016, 0.118]</code></td>
+                    <td>✅ Significant</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <p><strong>Observations:</strong></p>
+        <ul>
+            <li>Similar to the CMP model, <strong>Right-Wing Nationalists</strong> and <strong>Liberals</strong> show significant positive responsiveness.</li>
+            <li>While the main effect of "minority" is not significant here, the <strong>interaction between minority status and the MIPEX center</strong> is positive and significant (β ≈ 0.066, p < 0.05), suggesting a nuanced responsiveness for minority MEPs specifically tied to the MIPEX center.</li>
+        </ul>
+        
+        <hr>
+        
+        <h2>3. Comparative Conclusions</h2>
+        <ol>
+            <li><strong>Consistency:</strong> The responsiveness of <strong>Right-Wing Nationalists</strong> and <strong>Liberals</strong> is consistent across both CMP and MIPEX frameworks.</li>
+            <li><strong>Minority Dynamics:</strong> Minority MEPs show a very strong general responsiveness in the CMP model, but a more specific, interaction-driven responsiveness in the MIPEX model.</li>
+            <li><strong>Non-Factors:</strong> Gender and the Misery Index do not appear to play a significant role in the responsiveness of these models.</li>
+        </ol>
+        
+        <p><em>Note: Figures generated by the pipeline in <code>output/figures/</code> should be cross-referenced with these tables to visualize the distribution of the posterior estimates.</em></p>
+    </div>
+</body>
+</html>

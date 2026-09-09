@@ -3,20 +3,39 @@
 # Runs all pipeline stages in separate R processes to manage memory.
 # Usage: Rscript scripts/run_pipeline.R
 
+# =============================================================================
 # 1. Configuration and Dependencies
-# Using a simple config list to avoid commenting/uncommenting code for different model versions
+# =============================================================================
+
+# Pipeline configuration - select which model versions to run
 pipeline_config <- list(
   model_version = "Bayesian", # Options: "Standard", "FE", "Bayesian"
   comparison_version = "Bayesian" # Options: "Standard", "Bayesian"
 )
 
-# Load required libraries
-# Note: It is assumed that the environment is managed via renv (see .clinerules)
-libs <- c("here", "dplyr", "tidyr", "readr", "writexl", "tidyverse")
-lapply(libs, library, character.only = TRUE)
+# Helper function to load required packages
+load_packages <- function(pkgs) {
+  missing_pkgs <- pkgs[!vapply(pkgs, requireNamespace, logical(1), quietly = TRUE)]
+  
+  if (length(missing_pkgs) > 0) {
+    warning(sprintf(
+      "The following packages are missing and will be installed: %s\n",
+      paste(missing_pkgs, collapse = ", ")
+    ))
+    install.packages(missing_pkgs)
+  }
+  
+  invisible(lapply(pkgs, library, character.only = TRUE))
+}
 
-# 2. Definition of scripts to run
-# We define the core pipeline and then dynamically add the selected model version
+# Load only the packages actually needed by the orchestrator
+libs_orchestrator <- c("here")
+load_packages(libs_orchestrator)
+
+# =============================================================================
+# 2. Definition of Scripts to Run
+# =============================================================================
+
 core_scripts <- c(
   "01_import_questions.R", 
   "02_df_setup.R", 
@@ -32,60 +51,106 @@ model_map <- list(
 
 comparison_map <- list(
   "Standard"  = "06_model_comparison.R",
-  "Bayesian" = "06_model_comparison_Bayesian.R"
+  "Bayesian"  = "06_model_comparison_Bayesian.R"
 )
 
-# Resolve the specific scripts based on config
 selected_model <- model_map[[pipeline_config$model_version]]
 selected_comp   <- comparison_map[[pipeline_config$comparison_version]]
 
 scripts_to_run <- c(core_scripts, selected_model, selected_comp)
 
-# 3. Verifica preventiva dell'esistenza dei file
+# =============================================================================
+# 3. Pre-flight Checks
+# =============================================================================
+
 for (s in scripts_to_run) {
-  if (!file.exists(here("scripts", s))) {
-    stop(paste("ERRORE: Lo script", s, "non esiste nella cartella scripts/!"))
+  script_path <- here("scripts", s)
+  if (!file.exists(script_path)) {
+    stop(sprintf("ERRORE: Lo script '%s' non esiste nella cartella scripts/!", s))
   }
 }
 
-# 4. Creazione cartelle di output
+# =============================================================================
+# 4. Create Output Directories
+# =============================================================================
+
 dir.create(here("output"), showWarnings = FALSE, recursive = TRUE)
 dir.create(here("output", "figures"), showWarnings = FALSE, recursive = TRUE)
 dir.create(here("output", "tables"), showWarnings = FALSE, recursive = TRUE)
 dir.create(here("data_processed"), showWarnings = FALSE, recursive = TRUE)
 
-# 5. Funzione per eseguire ogni step in una sessione pulita
-run_step <- function(step_num, description, script_name) {
-  cat(sprintf("Step %d/%d: %s...\n", step_num, length(scripts_to_run), description))
+# =============================================================================
+# 5. Pipeline Execution Function
+# =============================================================================
 
-  script_path <- shQuote(here("scripts", script_name))
-
-  # Eseguiamo Rscript passando il percorso virgolettato
-  result <- system2("Rscript", args = script_path,
-                    stdout = TRUE, stderr = TRUE)
-
-  if (!is.null(attr(result, "status")) && attr(result, "status") != 0) {
-    cat("  FAILED!\n")
-    # Stampiamo le ultime 20 righe dell'errore REALE dello script per debug
-    cat(tail(result, 20), sep = "\n")
-    stop(sprintf("Pipeline failed at step %d: %s", step_num, script_name))
+run_step <- function(step_num, total_steps, description, script_name) {
+  cat(sprintf("Step %d/%d: %s...\n", step_num, total_steps, description))
+  
+  script_path <- here("scripts", script_name)
+  
+  # Execute Rscript - REMOVED shQuote() for the args parameter in system2
+  # as system2 handles arguments separately and shQuote can lead to 
+  # double-quoting in some R versions/OS combinations.
+  result <- system2(
+    "Rscript", 
+    args = script_path,
+    stdout = TRUE, 
+    stderr = TRUE
+  )
+  
+  execution_failed <- FALSE
+  error_message <- ""
+  
+  status_attr <- attr(result, "status")
+  if (!is.null(status_attr) && status_attr != 0) {
+    execution_failed <- TRUE
+    error_message <- paste("Exit status:", status_attr)
   }
+  
+  if (!execution_failed && length(result) > 0) {
+    error_patterns <- c("^Error:", "^ERROR", "fatal error", "non-zero exit status")
+    has_error <- any(vapply(error_patterns, function(p) any(grepl(p, result, ignore.case = TRUE)), logical(1)))
+    
+    if (has_error) {
+      execution_failed <- TRUE
+      error_message <- "R error detected in output"
+    }
+  }
+  
+  if (execution_failed) {
+    cat("  FAILED!\n")
+    cat("  ", error_message, "\n\n")
+    cat("  Last 30 lines of output:\n")
+    cat("  ", paste(tail(result, 30), collapse = "\n  "), "\n\n")
+    stop(sprintf("Pipeline failed at step %d/%d: %s", step_num, total_steps, script_name))
+  }
+  
   cat(sprintf("  -> %s complete\n\n", script_name))
+  invisible(result)
 }
 
-# 6. Execution of the Pipeline
-cat("=== EUQuest Data Pipeline ===\n\n")
+# =============================================================================
+# 6. Execute the Pipeline
+# =============================================================================
 
-# Execute core steps
-for (i in seq_along(core_scripts)) {
-  run_step(i, paste("Core step", i), core_scripts[i])
+cat("=== EUQuest Data Pipeline ===\n")
+cat(sprintf("Model version: %s\n", pipeline_config$model_version))
+cat(sprintf("Comparison version: %s\n\n", pipeline_config$comparison_version))
+
+total_steps <- length(scripts_to_run)
+
+for (i in seq_along(scripts_to_run)) {
+  script_name <- scripts_to_run[i]
+  
+  if (i <= length(core_scripts)) {
+    description <- sprintf("Core step %d", i)
+  } else if (i == length(core_scripts) + 1) {
+    description <- sprintf("Fitting models (%s)", pipeline_config$model_version)
+  } else {
+    description <- sprintf("Comparing models (%s)", pipeline_config$comparison_version)
+  }
+  
+  run_step(i, total_steps, description, script_name)
 }
-
-# Execute Model step
-run_step(5, sprintf("Fitting models (%s)", pipeline_config$model_version), selected_model)
-
-# Execute Comparison step
-run_step(6, sprintf("Comparing models (%s)", pipeline_config$comparison_version), selected_comp)
-
 
 cat("=== Pipeline complete ===\n")
