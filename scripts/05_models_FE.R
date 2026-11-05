@@ -92,7 +92,7 @@ message("   Pulizia preventiva dei paesi strutturalmente privi di dati CMP (nece
 
 # Controlliamo SOLO il CMP, perché ci serve tassativamente per l'interazione nel Modello 3
 paesi_da_escludere <- df_merged_3 %>%
-  filter(legislative_term %in% c("8th", "9th")) %>%
+  filter(legislative_term %in% c("7th", "8th", "9th")) %>%
   group_by(country) %>%
   summarise(
     pct_na_cmp = mean(is.na(cmp_mean)),
@@ -105,7 +105,7 @@ message(paste("🚫 Paesi esclusi strutturalmente (Mancanza CMP):", paste(paesi_
 
 # Creazione del dataset finale per i modelli
 df_model_data <- df_merged_3 %>% 
-  filter(legislative_term %in% c("8th", "9th")) %>% 
+  filter(legislative_term %in% c("7th", "8th", "9th")) %>% 
   filter(!country %in% paesi_da_escludere) %>%
   drop_na(
     pqs_discrimination, total_questions, gender, mep_id, country,

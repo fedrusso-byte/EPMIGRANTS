@@ -48,7 +48,7 @@ df_merged_3 <- df_merged_3 %>%
 # Filter for relevant periods and remove structural NAs
 # Note: We keep a broader set of data than the FE version to maximize Bayesian power
 df_model_data <- df_merged_3 %>% 
-  filter(legislative_term %in% c("8th", "9th")) %>% 
+  filter(legislative_term %in% c("7th", "8th", "9th")) %>% 
   drop_na(
     pqs_discrimination, total_questions, gender, mep_id, country,
     party_family, libe, minority, misery_index, cmp_center, mipex_center

@@ -92,7 +92,7 @@ df_merged_3 <- df_merged_3 %>%
 message("   Pulizia preventiva dei paesi strutturalmente privi di dati MIPEX/CMP...")
 
 paesi_da_escludere <- df_merged_3 %>%
-  filter(legislative_term %in% c("8th", "9th")) %>%
+  filter(legislative_term %in% c("7th", "8th", "9th")) %>%
   group_by(country) %>%
   summarise(
     pct_na_mipex = mean(is.na(mipex_antidiscrimination_score)),
@@ -105,7 +105,7 @@ paesi_da_escludere <- df_merged_3 %>%
 message(paste("🚫 Paesi esclusi strutturalmente (100% dati mancanti):", paste(paesi_da_escludere, collapse = ", ")))
 
 df_model_data <- df_merged_3 %>% 
-  filter(legislative_term %in% c("8th", "9th")) %>% 
+  filter(legislative_term %in% c("7th", "8th", "9th")) %>% 
   filter(!country %in% paesi_da_escludere) %>%
   drop_na(
     pqs_discrimination, total_questions, gender, mep_id, country,
