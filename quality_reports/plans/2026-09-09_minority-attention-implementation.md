@@ -1,7 +1,7 @@
 # Implementation Plan — 7th-Term Extension and H3 Theory Revision
 
 **Created:** 2026-09-09
-**Status:** ACTIVE — Phase A (hand-coding) and the H3 theory workstream are with Zeynep
+**Status:** ACTIVE — Phase A (hand-coding), Phase B (merge), and the VII–IX refit (Phase C) executed 2026-11-05 (see `TO_DO.txt` §1–3); H3 theory (Zeynep) and Phase D (manuscript, project docs) in progress.
 **Owners:** Zeynep Mentesoglu Tardivo (coding, H3 theory); Federico Russo (analyses); Cline (drafting, automation, reports)
 **Related:** research specification (`quality_reports/research_spec_minority_attention.md`); next steps plan (`quality_reports/plans/2026-09-09_minority-attention-next-steps.md`); SISP memo (`quality_reports/2026-09-09_sisp-feedback.md`)
 
@@ -39,12 +39,12 @@ collects no systematic ethnicity data and place of birth is an incomplete proxy,
 biographical research across public sources.
 
 **Acceptance criteria:**
-- [ ] All 468 rows carry a non-blank `minority` value (0 or 1).
+- [x] All 468 rows carry a non-blank `minority` value (0 or 1).
 - [ ] Every `minority = 1` row carries a `link` to an evidencing source (EP bio, reliable press,
       academic/NGO material) plus a `notes` entry.
 - [ ] Rows whose national-party values were blanked (NA) in the worksheet because of suspect
       upstream data are not used as coding evidence.
-- [ ] The completed worksheet is returned as `.csv` (xlsx accepted; it will be exported to csv
+- [x] The completed worksheet is returned as `.csv` (xlsx accepted; it will be exported to csv
       before merging — csv is the canonical merge format).
 
 ## 4. Parallel Workstream — H3 Theory Revision (owner: Zeynep)
@@ -64,34 +64,36 @@ biographical research across public sources.
 
 Cline prepares the merge script and verification checks; Federico reviews and applies.
 
-- [ ] Convert `minorities8th9th.csv` from Latin-1/Windows encoding to UTF-8.
-- [ ] Append Zeynep's 468 codings to `data_raw/minority.csv` (master), keyed by `mep_id`, with
+> Executed 2026-11-05: master 1,299 → 1,770 rows; zero VII-overlap verified (10 repeat MEPs inherit their VIII/IX coding — see `TO_DO.txt` §1).
+
+- [x] Convert `minorities8th9th.csv` from Latin-1/Windows encoding to UTF-8.
+- [x] Append Zeynep's 468 codings to `data_raw/minority.csv` (master), keyed by `mep_id`, with
       `minority` / `notes` / `link` matching the master format.
-- [ ] Add the 3 hand-coded MEPs missing from the master despite being coded in
+- [x] Add the 3 hand-coded MEPs missing from the master despite being coded in
       `minorities8th9th.csv` (`minority = 1`): Max ORVILLE (234344, FRA), Guy LAVOCAT (251859, FRA),
       Leopoldo LÓPEZ GIL (197777, SPA).
-- [ ] Verification: anti-join check that no 7th-term MEP in the panel lacks a minority coding;
+- [x] Verification: anti-join check that no 7th-term MEP in the panel lacks a minority coding;
       report row counts before/after.
 - [ ] Upstream sync: fix mis-aligned `national_parties` for ~53 MEPs (6th term) in the `euquest`
       repository's `data_raw/meps.csv`.
 
 ## 6. Phase C — Analysis Widening (owner: Federico; Cline preps)
 
-- [ ] Cline: widen the term filter at `scripts/05_models_Bayesian.R` (~line 51) from
+- [x] Cline: widen the term filter at `scripts/05_models_Bayesian.R` (~line 51) from
       `c("8th", "9th")` to `c("7th", "8th", "9th")`.
-- [ ] Cline/Federico: archive the cached fits (`output/bayesian_model_cmp.*`,
+- [x] Cline/Federico: archive the cached fits (`output/bayesian_model_cmp.*`,
       `output/bayesian_model_mipex.*`). `brms` silently reloads existing `file =` fits, so stale
       8th/9th-term results would otherwise be reused.
-- [ ] Federico: run `Rscript scripts/run_pipeline.R` (config: Bayesian); check convergence
+- [x] Federico: run `Rscript scripts/run_pipeline.R` (config: Bayesian); check convergence
       (R-hat ≈ 1.00, effective sample sizes) and posterior predictive behaviour.
-- [ ] Federico: re-run `scripts/07_extract_all_coefficients.R` to regenerate the unified
+- [x] Federico: re-run `scripts/07_extract_all_coefficients.R` to regenerate the unified
       coefficient tables.
 - [ ] Federico + Cline: interpret — H1–H3 with the enlarged sample; marginal effects of `minority`
       across the observed MIPEX range; sensitivity checks (DV variants; §8 decisions).
 
 ## 7. Phase D — Reporting (Cline drafts; both authors review)
 
-- [ ] Update `quality_reports/bayesian_model_results_report.md` with the new estimates.
+- [x] Update `quality_reports/bayesian_model_results_report.md` with the new estimates.
 - [ ] Manuscript (`paper/MEPArticle_Updated.md`): data/sample section (add the 7th term), findings
       and Table 1, limitations (drop the "only 8th/9th legislatures" caveat), and integrate Zeynep's
       revised H3 theory section.

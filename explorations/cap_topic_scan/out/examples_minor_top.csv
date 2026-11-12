@@ -1,0 +1,96 @@
+topic_key,sub_code,issue_maj,n_min,n_nonmin,ratio,subject,n
+10_1002,1002,Transportation,40,1839,1.4542703150536573,Road safety,9
+10_1002,1002,Transportation,40,1839,1.4542703150536573,Road traffic law enforcement,6
+10_1002,1002,Transportation,40,1839,1.4542703150536573,Connecting Europe Facility,3
+10_1002,1002,Transportation,40,1839,1.4542703150536573,Road safety in Europe,3
+10_1002,1002,Transportation,40,1839,1.4542703150536573,Electric cars,2
+10_1003,1003,Transportation,25,888,1.8823220082936905,Air passenger rights,7
+10_1003,1003,Transportation,25,888,1.8823220082936905,Single European Sky,5
+10_1003,1003,Transportation,25,888,1.8823220082936905,Compatibility with EU guidelines on State aid for regional airports,3
+10_1003,1003,Transportation,25,888,1.8823220082936905,Unfair competition between Brussels and Charleroi airports,3
+10_1003,1003,Transportation,25,888,1.8823220082936905,Air passengers' rights,2
+17_1709,1709,Technology,34,1763,1.2894172677119253,Net neutrality,7
+17_1709,1709,Technology,34,1763,1.2894172677119253,Cyber security,6
+17_1709,1709,Technology,34,1763,1.2894172677119253,Cloud computing,5
+17_1709,1709,Technology,34,1763,1.2894172677119253,Digital Agenda,5
+17_1709,1709,Technology,34,1763,1.2894172677119253,Artificial intelligence,3
+19_1901,1901,International Affairs,56,2733,1.3699832978913815,Development aid to Afghanistan,4
+19_1901,1901,International Affairs,56,2733,1.3699832978913815,Bab al-Hawa humanitarian aid corridor,3
+19_1901,1901,International Affairs,56,2733,1.3699832978913815,Earthquake in Nepal,3
+19_1901,1901,International Affairs,56,2733,1.3699832978913815,Instrument for Pre-Accession Assistance,3
+19_1901,1901,International Affairs,56,2733,1.3699832978913815,Management of EU assistance to Afghanistan,3
+19_1905,1905,International Affairs,54,2076,1.7391349699749334,Development aid,3
+19_1905,1905,International Affairs,54,2076,1.7391349699749334,Brutality by Morocco in dismantling the Agdaym Izik Sahrawi camp,2
+19_1905,1905,International Affairs,54,2076,1.7391349699749334,Case of Reina Luisa Tamayo in Cuba,2
+19_1905,1905,International Affairs,54,2076,1.7391349699749334,"Case of Sam Rainsy, Member of the Cambodian Parliament and opposition leader - continuous vi...",2
+19_1905,1905,International Affairs,54,2076,1.7391349699749334,Catastrophes,2
+19_1925,1925,International Affairs,60,2054,1.9530694567066762,VP/HR - Human rights in Mexico,3
+19_1925,1925,International Affairs,60,2054,1.9530694567066762,Condemnation of continued human rights violations in Saudi Arabia,2
+19_1925,1925,International Affairs,60,2054,1.9530694567066762,Death penalty in Iran,2
+19_1925,1925,International Affairs,60,2054,1.9530694567066762,Death penalty in the USA and the recent execution of Ronald Lee Gardner by firing squad,2
+19_1925,1925,International Affairs,60,2054,1.9530694567066762,Death sentences on opposition activists in Iran,2
+19_1927,1927,International Affairs,25,824,2.028521775928152,Addition of the LTTE to the EU 'terrorist list',2
+19_1927,1927,International Affairs,25,824,2.028521775928152,Indonesia's anti-terror amendments,2
+19_1927,1927,International Affairs,25,824,2.028521775928152,Russian federal judge killed in the North Caucasus province,2
+19_1927,1927,International Affairs,25,824,2.028521775928152,US attack in Baghdad,2
+19_1927,1927,International Affairs,25,824,2.028521775928152,Use of European funds by entities and persons associated with terrorist organisations,2
+1_107,107,Macroeconomics,47,3686,0.8525294773537219,Financial transaction tax,10
+1_107,107,Macroeconomics,47,3686,0.8525294773537219,VAT on e-books,7
+1_107,107,Macroeconomics,47,3686,0.8525294773537219,Common Consolidated Corporate Tax Base (CCCTB),5
+1_107,107,Macroeconomics,47,3686,0.8525294773537219,Financial transactions tax,5
+1_107,107,Macroeconomics,47,3686,0.8525294773537219,Tax on financial transactions,5
+2_201,201,Civil Rights,51,1369,2.490769879082678,European Agency for Fundamental Rights - simple definition,4
+2_201,201,Civil Rights,51,1369,2.490769879082678,Administrative reform in Ukraine and minority rights,2
+2_201,201,Civil Rights,51,1369,2.490769879082678,Blatant disregard for the Lausanne Treaty by Turkish Foreign Ministry spokesperson,2
+2_201,201,Civil Rights,51,1369,2.490769879082678,Clearing of travellers' camps by Italian authorities in breach of human and children's rights,2
+2_201,201,Civil Rights,51,1369,2.490769879082678,Combating racism and xenophobia,2
+2_202,202,Civil Rights,51,2132,1.599373341681138,Violence against women,19
+2_202,202,Civil Rights,51,2132,1.599373341681138,Practical measures to combat gender stereotypes,13
+2_202,202,Civil Rights,51,2132,1.599373341681138,Female genital mutilation,7
+2_202,202,Civil Rights,51,2132,1.599373341681138,Gender equality,7
+2_202,202,Civil Rights,51,2132,1.599373341681138,Combating violence against women,6
+2_205,205,Civil Rights,25,1279,1.3068818947340086,Rights of persons with disabilities,6
+2_205,205,Civil Rights,25,1279,1.3068818947340086,European Accessibility Act,5
+2_205,205,Civil Rights,25,1279,1.3068818947340086,EU Disability Card,4
+2_205,205,Civil Rights,25,1279,1.3068818947340086,EU disability card,4
+2_205,205,Civil Rights,25,1279,1.3068818947340086,European disability card,4
+2_207,207,Civil Rights,32,2172,0.9850471857766762,Freedom of the press in Turkey,4
+2_207,207,Civil Rights,32,2172,0.9850471857766762,Internet censorship,4
+2_207,207,Civil Rights,32,2172,0.9850471857766762,Hate speech,3
+2_207,207,Civil Rights,32,2172,0.9850471857766762,Support for anti-Islamist initiatives in the EU,3
+2_207,207,Civil Rights,32,2172,0.9850471857766762,"Arrests of bishops, priests and Christian believers in India",2
+2_208,208,Civil Rights,36,2107,1.142364878236976,Data protection,11
+2_208,208,Civil Rights,36,2107,1.142364878236976,Data Retention Directive,7
+2_208,208,Civil Rights,36,2107,1.142364878236976,Data retention,6
+2_208,208,Civil Rights,36,2107,1.142364878236976,Personal data protection,5
+2_208,208,Civil Rights,36,2107,1.142364878236976,Google Street View,4
+2_213,213,Civil Rights,28,1988,0.9416912356984772,European Citizens' Initiative,7
+2_213,213,Civil Rights,28,1988,0.9416912356984772,EU-Cuba relations,4
+2_213,213,Civil Rights,28,1988,0.9416912356984772,Arrest of journalists in Turkey,3
+2_213,213,Civil Rights,28,1988,0.9416912356984772,Consultation on a European Citizens' Initiative,3
+2_213,213,Civil Rights,28,1988,0.9416912356984772,Are the European Union's financial contributions to Freedom House justified?,2
+2_299,299,Civil Rights,44,2688,1.0944357962507603,Accession of the EU to the European Convention on Human Rights,3
+2_299,299,Civil Rights,44,2688,1.0944357962507603,Criminalisation of homelessness in Hungary,3
+2_299,299,Civil Rights,44,2688,1.0944357962507603,112 emergency number,2
+2_299,299,Civil Rights,44,2688,1.0944357962507603,Accession to the ECHR,2
+2_299,299,Civil Rights,44,2688,1.0944357962507603,Agroisleña 2,2
+7_731,731,Environment,28,2795,0.6697968431372354,Climate change,9
+7_731,731,Environment,28,2795,0.6697968431372354,Biofuels,8
+7_731,731,Environment,28,2795,0.6697968431372354,Climate refugees,5
+7_731,731,Environment,28,2795,0.6697968431372354,Green jobs,5
+7_731,731,Environment,28,2795,0.6697968431372354,European Emissions Trading System,4
+9_931,931,Immigration,30,1495,1.3416738006941518,Asylum seekers,3
+9_931,931,Immigration,30,1495,1.3416738006941518,Refugee crisis,3
+9_931,931,Immigration,30,1495,1.3416738006941518,Afghan refugee,2
+9_931,931,Immigration,30,1495,1.3416738006941518,Asylum,2
+9_931,931,Immigration,30,1495,1.3416738006941518,Common European Asylum System,2
+9_933,933,Immigration,68,2005,2.2675737087043633,Illegal immigration,6
+9_933,933,Immigration,68,2005,2.2675737087043633,Operation Sophia,5
+9_933,933,Immigration,68,2005,2.2675737087043633,Readmission agreements,5
+9_933,933,Immigration,68,2005,2.2675737087043633,Immigration,4
+9_933,933,Immigration,68,2005,2.2675737087043633,Operation Mos Maiorum,4
+9_950,950,Immigration,72,705,6.828263258000875,Frontex,4
+9_950,950,Immigration,72,705,6.828263258000875,Alarming increase in irregular migrant arrivals over the past year via the central Mediterra...,3
+9_950,950,Immigration,72,705,6.828263258000875,Operating agreement between Frontex and Airbus-IAI on long-term surveillance of the Mediterr...,3
+9_950,950,Immigration,72,705,6.828263258000875,Directive 2004/82/EC and the communication of Advanced Passenger Information,2
+9_950,950,Immigration,72,705,6.828263258000875,European Border and Coast Guard,2

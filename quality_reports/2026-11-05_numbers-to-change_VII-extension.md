@@ -47,3 +47,18 @@
 - Nel modello CMP (non nel ms): `minority` main effect perde significatività: 1.059 [0.080, 1.917] → 0.472 [−0.362, 1.171]; interazione `minority × cmp` sale: 0.0407 [−0.138, 0.254] → **0.115 [−0.032, 0.290]**. Da tenere presente se l'appendice o la discussione citano il CMP.
 - Nell'appendice frequentista (M1–M4): N 6.372 → 9.850; M2/M3 `minority` 1.28/1.29 → **1.05/1.05 (p < 0.001)**; M4 interazione 0.069 → **0.040**; problema pre-esistente SE NaN si sposta da M1/M3 a M1/M4 (nota: p = NaN per i termini M4 — usare la via Bayesian). 
 - Frase ms L582 "The findings therefore provide support for H3" resta valida con i nuovi numeri.
+## 5. ADDENDUM 2026-11-06 — fix filtro CAP-201 (sostituisce §1/§2 per i coefficienti)
+
+Il fix del filtro DV (Fase 1: audit §9 verbatim + allowlist Option-B, v. `2026-11-06_CAP201-filter-implementation.md`) ha ribattuto l'intera pipeline. I valori di §1/§2 qui sopra sono **superati** da questi (stessi anchor di riga del ms):
+
+| Riga ms | Vecchio (ms) → Post-fix (Bayesian, VII–IX) |
+|---|---|
+| 549 | H1 `minority`: 0.327 [−0.595, 1.151] → **0.438 [−0.256, 1.063]** (resta ns) |
+| 567 | H2 `mipex`: −0.0007 [−0.013, 0.011] → **0.0017 [−0.0095, 0.013]** (resta ns) |
+| 581, 603 | H3 `minority × mipex`: 0.0658* [0.016, 0.117] → **0.0376 [−0.002, 0.080] SENZA stella** — la CrI include ora lo zero: la frase L582 "The findings therefore provide support for H3" va riformulata (testo pronto in §7 del rapporto) |
+| 605, 622 (LIBE) | 0.429 [0.079, 0.751] → **0.507 [0.270, 0.743]** (sempre sig) |
+| 607, 641 (gender M) | 0.015 [−0.191, 0.219] → **0.019 [−0.141, 0.174]** (ns) |
+
+- Table 1 pronto da incollare: `2026-11-06_CAP201-filter-implementation.md` §7(b).
+- Counts (L423–426, roster `df_merged_3`): MEP con ≥1 DOM VIII **218 → 212**, IX **117 → 113** (VII 227 → 224) — sostituisce anche 225/124 (che non riproducibili).
+- Diff verificato: `2026-11-06_CAP201-filter-implementation.md` §3–§6 (+ `quality_reports/session_logs/2026-11-06_cap201-fix-diff.log`).

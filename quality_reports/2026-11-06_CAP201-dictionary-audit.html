@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>CAP-201 dictionary audit (DV) — with Phase-1 status</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="/tmp/pandoc_style.html" />
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">CAP-201 dictionary audit (DV) — with Phase-1
+status</h1>
+</header>
+<h1 id="cap-201-dictionary-filter-audit-and-impact-sizing">📑 CAP-201
+dictionary filter — audit and impact sizing</h1>
+<p><strong>Deliverable:</strong> analysis-only audit report ·
+<strong>Date:</strong> 2026-11-06 · <strong>Audit:</strong> Cline ·
+<strong>Decision:</strong> Federico Russo — <em>“solo analisi per ora;
+fix completo in un secondo momento”</em> <strong>Status:</strong> no
+pipeline changes in this session. A backlog entry (deferred fix) was
+added to <code>TO_DO.txt</code> (§6️⃣). Nothing in <code>scripts/</code>,
+<code>data_*</code>, <code>output/</code>, or the manuscript was
+modified.</p>
+<hr />
+<h2 id="purpose-and-scope">1. Purpose and scope</h2>
+<p>The dependent variable (DV) of the study counts EP written questions
+on <strong>discrimination of (national, ethnic, religious)
+minorities</strong> assigned by LLaMA to CAP subtopic
+<strong>201</strong>, filtered by a keyword blacklist in
+<code>scripts/01_import_questions.R</code> (variable
+<code>pq_discrimination</code>). A question is kept only if its
+<strong>subject</strong> matches none of 24 exclusion keywords.</p>
+<p>This report documents the <strong>fourth read-only audit</strong> of
+the filter (2026-11-06) and sizes its DV impact. Sources:</p>
+<ul>
+<li><code>data_processed/epq.rds</code> — subjects, dates, MEP ids
+(2,324 CAP-201 rows);</li>
+<li><code>data_raw/epq_3.0.csv</code> joined with
+<code>data_raw/epq_minor_classified-llama_202502.csv</code>
+(<code>id = idOrig</code>) — full-text counterfactual.</li>
+</ul>
+<p>Audit goals: (i) verify baseline numbers; (ii) quantify <strong>false
+exclusions</strong> (EU-relevant questions wrongly dropped); (iii)
+quantify <strong>extra-EU leakage</strong> (out-of-scope questions
+wrongly kept); (iv) identify inert keywords and the paper–code /
+comment–code mismatches; (v) size (projection only, not applied) a
+revised filter; (vi) record a 3-phase roadmap. Every number below was
+recomputed live on 2026-11-06; scripts and raw outputs are listed in
+§11.</p>
+<h2 id="current-mechanism-verbatim">2. Current mechanism (verbatim)</h2>
+<p><code>scripts/01_import_questions.R</code> (L57–72; comments are the
+author’s):</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a dummy variable with value 1 when variable &quot;subtopic&quot; is 1 and at the same time the variable &quot;text&quot; does not contain the terms &quot;christian&quot; OR &quot;Africa&quot;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>epq <span class="ot">&lt;-</span> epq <span class="sc">%&gt;%</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">pq_discrimination =</span> <span class="fu">case_when</span>(</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>      <span class="co"># Condizione: subtopic è &quot;201&quot; E il testo NON contiene termini relativi a:</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>      <span class="co"># 1. Contesti extra-europei (Africa, Asia, Medio Oriente, etc.)</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>      <span class="co"># 2. Narrative di &quot;discriminazione inversa&quot; o critica alle politiche di anti-discriminazione (tipiche della destra)</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>      <span class="co"># 3. Temi religiosi specifici o conflitti storici/attuali non legati alla discriminazione etnica interna UE</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>      subtopic <span class="sc">==</span> <span class="st">&quot;201&quot;</span> <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">str_detect</span>(subject, <span class="at">pattern =</span> <span class="st">&quot;(?i)christian|africa|palestin|Second World War|hamas|danube|turkey|istanbul|india|china|usa|america|asia|israel|iran|syria|middle east|native|patriot|political correctness|woke|reverse discrimination|traditional values|gender ideology|quotas&quot;</span>) <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>      <span class="co"># In tutti gli altri casi, assegna 0</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>      <span class="cn">TRUE</span> <span class="sc">~</span> <span class="dv">0</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div>
+<blockquote>
+<p><strong>STATUS UPDATE — 2026-11-06 (Phase 1 executed).</strong> This
+report’s §9 regex (verbatim) plus the Option-B rescue allowlist has been
+<strong>implemented in
+<code>scripts/01_import_questions.R</code></strong> and the full
+pipeline rerun; verified old-vs-new diff in
+<strong><code>2026-11-06_CAP201-filter-implementation.md</code></strong>
+(VII–IX kept 1,323 → <strong>1,285</strong>; roster MEPs ≥1 DV
+227/218/117 → 224/212/113; H3 coefficient 0.0376 with the CrI
+<strong>now including zero</strong>). Corrections surfaced while
+executing: §10’s “12 re-inclusions” is <strong>13</strong>; Appendix A’s
+third column is <strong>MEP id</strong> (rescue must use
+<code>epq$id</code> strings); §8’s 165 excluded-window is the pure-§9
+figure (with the 4 in-window rescues the applied figure is
+<strong>161</strong>). Phase 2 (LLM re-validation) and Phase 3
+(manuscript integration) remain open. Two implementation facts drive
+everything below (see §6):</p>
+</blockquote>
+<ol type="1">
+<li>The comment says the filter applies to
+<strong><code>text</code></strong>; the code applies it to
+<strong><code>subject</code></strong> only. Subject-only is the
+<em>correct</em> choice (371-row counterfactual in §6.3);</li>
+<li>Most keywords are unbounded stems of arbitrary length
+(<code>africa</code>, <code>usa</code>, <code>china</code>,
+<code>native</code>, <code>syria</code>, …), a few with asymmetric
+coverage (<code>china</code> does not catch <code>chinese</code>,
+<code>turkey</code> does not catch <code>turkish</code>). Missing word
+boundaries are the root cause of both error types found in §4–§5.</li>
+</ol>
+<h2 id="baseline-numbers-live-data_processedepq.rds">3. Baseline numbers
+(live <code>data_processed/epq.rds</code>)</h2>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Quantity</th>
+<th style="text-align: left;">Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">CAP-201 questions, all terms</td>
+<td style="text-align: left;"><strong>2,324</strong> (10 Jun 1994 → 1
+May 2024)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Excluded by current filter</td>
+<td style="text-align: left;"><strong>185</strong> (8.0%)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Kept (the DV)</td>
+<td style="text-align: left;"><strong>2,139</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Study window VII–IX (14 Jul 2009 – 15 Jun
+2024)</td>
+<td style="text-align: left;">1,446 questions</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">… kept in VII–IX</td>
+<td style="text-align: left;"><strong>1,323</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">… excluded in VII–IX</td>
+<td style="text-align: left;"><strong>123</strong> (8.5%)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">MEPs with ≥ 1 kept DV (VII / VIII /
+IX)</td>
+<td style="text-align: left;"><strong>237 / 226 / 129</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Notes. (a) <code>epq.rds$date</code> is a <code>Date</code> column;
+the earliest CAP-201 question is 10 Jun 1994 (this corrects an earlier
+working note of “1999–2024”). (b) The panel-filtered MEP counts reported
+elsewhere (227/218/117) differ from the raw counts above because of the
+study’s panel filters in <code>scripts/02_df_setup.R</code> (UK, HU, LU,
+MT, partial SK/RO exclusion); this audit works on the raw PQ data.</p>
+<h2 id="false-exclusions-eu-relevant-questions-wrongly-dropped">4. False
+exclusions (EU-relevant questions wrongly dropped)</h2>
+<h3 id="keyword-overmatching-examples-root-cause-unbounded-stems">4.1
+Keyword-overmatching examples (root cause: unbounded stems)</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Question (subject, truncated)</th>
+<th style="text-align: left;">Date / term</th>
+<th style="text-align: left;">Fired (wrong) keyword</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Refusal to accept holiday accommodation
+bookings from people from Silesia Province (Poland)</td>
+<td style="text-align: left;">2020-03-06 (IX)</td>
+<td style="text-align: left;"><code>usa</code> →
+“refu<strong>usa</strong>l”</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Implementation of the resolution on
+fundamental rights of people of African descent</td>
+<td style="text-align: left;">2020-03-06 (IX)</td>
+<td style="text-align: left;"><code>africa</code> → “African-descent” (a
+European anti-discrimination case)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Workers of black, Asian or minority ethnic
+(BAME) heritage employed in the Council</td>
+<td style="text-align: left;">2014-10-13 (VIII)</td>
+<td style="text-align: left;"><code>asia</code> → “Asian” contains
+“Asia”</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Poor representation of workers of BAME
+heritage in the Commission</td>
+<td style="text-align: left;">2014-12-18 (VIII)</td>
+<td style="text-align: left;"><code>asia</code> → “Asian”</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Number of Black, Asian and Minority Ethnic
+managers at the ECDC</td>
+<td style="text-align: left;">2015-05-19 (VIII)</td>
+<td style="text-align: left;"><code>asia</code> → “Asian”</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Number of employees of BAME heritage at
+EASA</td>
+<td style="text-align: left;">2015-12-03 (VIII)</td>
+<td style="text-align: left;"><code>asia</code> → “Asian”</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Thousands of children not in education in
+Bulgaria</td>
+<td style="text-align: left;">2017-09-25 (VIII)</td>
+<td style="text-align: left;"><code>usa</code> →
+“Tho<strong>usa</strong>nds”</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Continued use of the generally accepted
+terms ‘Macedonians’ and ‘Macedonian’ in the language usage of the
+EP</td>
+<td style="text-align: left;">2009-01-28 (pre-VII)</td>
+<td style="text-align: left;"><code>usa</code> →
+“l<strong>usa</strong>ge” (“usage”)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Bedouin expulsion from the east of
+Jerusalem</td>
+<td style="text-align: left;">2011-10-18 (VII)</td>
+<td style="text-align: left;"><code>usa</code> →
+“Jer<strong>usa</strong>lem”</td>
+</tr>
+</tbody>
+</table>
+<p>The <code>usa</code>→refusal/thousands/usage/Jerusalem/Lausanne
+family and the <code>asia</code>→Asian family are pure substring
+accidents. The four BAME questions belong to <strong>one MEP
+(124948)</strong> — a member of the VIII legislature who currently
+receives <strong>no DV credit</strong> for any of them.</p>
+<h3 id="word-boundary-only-variant-v2-right-idea-insufficient">4.2
+Word-boundary-only variant (v2) — right idea, insufficient</h3>
+<p>Replacing unbounded stems with word boundaries
+(<code>\bafrica\b</code>, <code>\busa\b</code>, <code>\bchina\b</code>,
+<code>\bsyria\b</code>, <code>\biran\b</code>, …) would re-include
+<strong>23</strong> questions (15 in VII–IX). But <strong>11 of the 23
+must stay excluded</strong> — they are extra-EU cases freed by making
+<code>syria</code>/<code>iran</code>/<code>turkey</code>/<code>jerusalem</code>
+word-bounded:</p>
+<ul>
+<li>Assyrian/Syriac Christians in Turkey (Tur Abdin 1998; Midyat 2005)
+and Assyrian minority in Iraq (2009);</li>
+<li>Observance of the Treaty of Lausanne for Imbros and Tenedos (2020);
+Blatant disregard for the Lausanne Treaty by the Turkish Foreign
+Ministry spokesperson (2020, 2 rows);</li>
+<li>VP/HR – Treatment of Arab minority by the Iranian Government
+(2011);</li>
+<li>Refusal of Egypt’s Freedom and Justice Party to cooperate with
+international observers (2011);</li>
+<li>Bedouin expulsion from the east of Jerusalem (2011);</li>
+<li>Harassment of the Guarani Indian people in Brazil (2008).</li>
+</ul>
+<p>Hence the fix must combine word boundaries <strong>and newly added
+keywords</strong> (§9). The projected final configuration (§8)
+re-includes <strong>12</strong> questions:</p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">#</th>
+<th style="text-align: left;">Date / term</th>
+<th style="text-align: left;">MEP</th>
+<th style="text-align: left;">Subject (truncated)</th>
+<th style="text-align: left;">Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">1996-09-02 pre-VII</td>
+<td style="text-align: left;">1916</td>
+<td style="text-align: left;">Refusal to grant daily hunting licences in
+Germany to Germans living abroad on a long-term basis</td>
+<td style="text-align: left;">re-include per rule — flag: likely LLaMA
+topic error (§7)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">1998-06-02 pre-VII</td>
+<td style="text-align: left;">1949</td>
+<td style="text-align: left;">Refusal by Slovenia to grant citizenship
+to 70 000 residents</td>
+<td style="text-align: left;">EU-relevant ✓</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">2003-11-11 pre-VII</td>
+<td style="text-align: left;">24030</td>
+<td style="text-align: left;">Anti-Semitism among North African and
+other Islamic immigrants in Europe</td>
+<td style="text-align: left;">EU-relevant ✓</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">2008-09-17 pre-VII</td>
+<td style="text-align: left;">28255</td>
+<td style="text-align: left;">UN accusations of racial
+discrimination</td>
+<td style="text-align: left;">EU-relevant ✓ (vague subject)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">5</td>
+<td style="text-align: left;">2009-01-28 pre-VII</td>
+<td style="text-align: left;">4508</td>
+<td style="text-align: left;">Continued use of the generally accepted
+terms ‘Macedonians’ and ‘Macedonian’ in the language usage of the
+EP</td>
+<td style="text-align: left;">EU-relevant ✓</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">6–9</td>
+<td style="text-align: left;">2014-10-13 / 2014-12-18 / 2015-05-19 /
+2015-12-03 (VIII)</td>
+<td style="text-align: left;">124948</td>
+<td style="text-align: left;">BAME heritage in Council / Commission /
+ECDC / EASA</td>
+<td style="text-align: left;">EU-relevant ✓✓✓✓</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">10</td>
+<td style="text-align: left;">2017-09-25 VIII</td>
+<td style="text-align: left;">124866</td>
+<td style="text-align: left;">Thousands of children not in education in
+Bulgaria</td>
+<td style="text-align: left;">EU-relevant ✓</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">11</td>
+<td style="text-align: left;">2020-03-06 IX</td>
+<td style="text-align: left;">197523</td>
+<td style="text-align: left;">Refusal to accept holiday accommodation
+bookings from people from Silesia Province (Poland)</td>
+<td style="text-align: left;">EU-relevant ✓</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">12</td>
+<td style="text-align: left;">2020-03-06 IX</td>
+<td style="text-align: left;">130100</td>
+<td style="text-align: left;">Implementation of the resolution on
+fundamental rights of people of African descent</td>
+<td style="text-align: left;">EU-relevant ✓</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Inside the study window: 7 genuine questions are currently
+invisible to the DV</strong> (rows 6–12); the 5 pre-VII re-inclusions
+have no window impact.</p>
+<h3 id="borderline-still-excluded-decision-table">4.3 Borderline still
+excluded — decision table</h3>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Question</th>
+<th style="text-align: left;">Date / term</th>
+<th style="text-align: left;">Keyword</th>
+<th style="text-align: left;">Assessment / action</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Protection by the EU of the Christian Serb
+minority in Kosovo</td>
+<td style="text-align: left;">2011-11-18 (VII)</td>
+<td style="text-align: left;"><code>christian</code></td>
+<td style="text-align: left;"><strong>In-window.</strong> Exclusion
+follows the manuscript rule (“exclusively Christians”) but the case is a
+European minority; decide in Phase 2. If re-included, MEP 21817 gains 1
+DV question in VII.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Future prospects for native inhabitants of
+the Sandžak region of Serbia and Montenegro, who regard themselves as
+Bosnians</td>
+<td style="text-align: left;">2005-08-23 (pre-VII)</td>
+<td style="text-align: left;"><code>native</code></td>
+<td style="text-align: left;">EU-relevant Bosniak case; no window impact
+(pre-VII).</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Discrimination against native speakers of
+languages other than English</td>
+<td style="text-align: left;">2005-05-25 (pre-VII)</td>
+<td style="text-align: left;"><code>native</code></td>
+<td style="text-align: left;">LLaMA topical error; no window
+impact.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Language discrimination – English native
+speakers</td>
+<td style="text-align: left;">2002-03-25 (pre-VII)</td>
+<td style="text-align: left;"><code>native</code></td>
+<td style="text-align: left;">Same as above.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Preferential treatment of native people in
+New Caledonia and French Polynesia in the area of employment</td>
+<td style="text-align: left;">2018-08-03 (VIII)</td>
+<td style="text-align: left;"><code>native</code></td>
+<td style="text-align: left;"><strong>Correct exclusion</strong>
+(extra-European) — shows why <code>\bnative\b</code> must be retained as
+such.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Pupils belonging to the Greek ethnic
+minority in Tirana deprived of their democratic right to education</td>
+<td style="text-align: left;">2007-10-15 (pre-VII)</td>
+<td style="text-align: left;"><code>iran</code> →
+“in<strong>Tiran</strong>a”</td>
+<td style="text-align: left;">FALSE exclusion (Europe); caused by the
+raw <code>iran</code> stem matching inside “Tirana”; no window impact;
+the §9 regex uses <code>\biran\b|iranians?</code> to fix the trap.</td>
+</tr>
+</tbody>
+</table>
+<p>Keep <code>\bnative\b</code> unchanged: within VII–IX its only match
+is New Caledonia (correct exclusion); the Sandžak / native-speaker
+errors are all pre-2009.</p>
+<h2 id="extra-eu-leakage-out-of-scope-questions-wrongly-kept">5.
+Extra-EU leakage (out-of-scope questions wrongly kept)</h2>
+<p>A keyword scan of the kept VII–IX set for country/nationality terms
+absent from the dictionary
+(<code>pakistan, tibet, uighur, uyghur, chinese, china, vietnam, guatemala, burma, myanmar, rwanda, congo, cambodia, afghanistan, iraq, egypt, turkish, nigeria, kashmir, nepal, ahmadi, coptic, karen, degar, brazil</code>)
+identifies:</p>
+<ul>
+<li><strong>47 kept VII–IX questions</strong> under the original audit-4
+pattern, <strong>49</strong> after adding the two Brazilian-indigenous
+rows (the audit-4 list predated the Brazil hit);
+<ul>
+<li>by term: <strong>VII 26 / VIII 16 / IX 7</strong>;</li>
+<li><strong>44 distinct MEPs</strong> affected (21 / 16 / 7);</li>
+<li><strong>17 MEPs (4 VII / 7 VIII / 6 IX) have these questions as
+their ONLY DV questions</strong> — i.e. their entire DV presence in the
+study window is leakage. (The interim figure “16 MEPs” = 4/7/5 referred
+to the 47-row pattern and missed the Brazilian MEP.)</li>
+</ul></li>
+<li>Of the 49: <strong>≈ 39 are clean out-of-scope</strong> (Pakistan
+blasphemy/Ahmadi cases, Tibet repression, Uighur camps, Coptic Egypt,
+Kurdistan operations, Rwanda, Burma…); <strong>4 are false
+drops</strong> the revised keywords would wrongly perform
+(Turkish-speaking minority in Western Thrace, Greece 2014; “Turkish as
+an official language of the European Parliament” 2012; “Risk of Turkish
+becoming an official EU language” 2016; “Education through the medium of
+Turkish in Greece” 2018); <strong>≈ 6 borderline</strong> (Turkish
+trade-unionist extradition 2011; “Justice for persons affected by
+Turkish policies” 2011; EU-resident surveillance app 2018; Islamophobia
+report drafted by a Turkish-linked centre 2021; Turkish Cypriot peace
+activists 2022; genome research in Europe by Chinese-linked companies
+2024).</li>
+</ul>
+<p>Missing keywords are the driver: <code>chinese</code>,
+<code>turkish</code>, <code>pakistan</code>, <code>tibet</code>,
+<code>uighur/uyghur</code>, <code>egypt</code>, <code>iraq</code> are
+absent from the current list. In the 78-row all-terms projection
+(Appendix A) keyword attribution (with overlaps): <code>turkish</code>
+21, <code>pakistan</code> 15, <code>tibet</code> 6, <code>uighur</code>
+5, <code>vietnam</code> 5, <code>iraq</code> 5, <code>chinese</code> 5,
+<code>burma</code> 4, <code>ahmadi</code> 4,
+<code>guatemala/egypt/brazil</code> 3 each, <code>rwanda/congo</code> 2
+each, and 1 each for
+<code>cambodia, afghan, kashmir, coptic, karen, degar</code>
+(<code>jerusalem, nepal, lausanne, korean</code> only ever fire on rows
+already excluded).</p>
+<h2 id="inert-keywords-papercode-mismatch-comment-vs-code">6. Inert
+keywords, paper–code mismatch, comment-vs-code</h2>
+<h3 id="inert-keywords-0-subject-hits">6.1 Inert keywords (0 subject
+hits)</h3>
+<p>Eight of the 24 keywords never fire on any subject in the
+2,324-question set: <code>patriot</code>,
+<code>political correctness</code>, <code>woke</code>,
+<code>reverse discrimination</code>, <code>traditional values</code>,
+<code>gender ideology</code>, <code>quotas</code>, <code>america</code>.
+<strong>The documented right-wing result (IRR ≈ 1.7) is therefore not
+shaped by the keyword filter</strong> — those questions enter (or fail
+to enter) the DV through the LLaMA topic assignment, not through these
+keys. Removing the keys from the regex changes nothing in the DV;
+keeping them only documents an intent the filter does not execute.</p>
+<p>On full text the same keys fire rarely and only in prose (full 2,324
+set): <code>patriot</code> 5, <code>political correctness</code> 1,
+<code>traditional values</code> 2, <code>quotas</code> 2,
+<code>americ*</code> 15, all others 0 — one more reason to keep the
+filter off the body text (§6.3). (This corrects the interim session note
+of “1/0/0/0/2/2/5/0” — superseded by the live counts above.)</p>
+<h3 id="paper-vs-code">6.2 Paper vs code</h3>
+<p><code>paper/MEPArticle_Updated.md</code> describes the exclusion as
+questions “exclusively concerning Christians, or cases occurring outside
+Europe”. Two mismatches:</p>
+<ol type="1">
+<li>the implemented rule also excludes <strong>right-wing “reverse
+discrimination” frames</strong> (7 inert keys); the manuscript’s
+measurement paragraph never mentions this;</li>
+<li>the implemented geography/religion keys are both over-inclusive
+(<code>refusal</code>, <code>thousands</code>, <code>Asian</code>,
+<code>usage</code>, <code>Assyrian</code>, <code>native speakers</code>,
+<code>Tirana</code>) and under-inclusive (no <code>chinese</code>,
+<code>turkish</code>, <code>pakistan</code>, …) relative to that wording
+(§4, §5).</li>
+</ol>
+<h3 id="comment-vs-code-text-vs-subject">6.3 Comment vs code
+(<code>text</code> vs <code>subject</code>)</h3>
+<p>The inline comment (§2) says the dummy excludes questions whose
+<strong>text</strong> contains the keywords; the code applies the keys
+to <strong><code>subject</code></strong> only. Subject-only is correct:
+applying the same keys to title+body would additionally exclude
+<strong>371</strong> of the 2,139 kept questions (<strong>244 in
+VII–IX</strong>), including plainly on-scope questions such as “Rampant
+euroscepticism in Hungary”, “Recognition of the German minority in
+Slovenia”, “Cyrillic alphabet in Croatia”, “The ‘Minority Safepack’
+citizens’ initiative”, “UN resolution on ‘Elimination of racism, racial
+discrimination, xenophobia and related intolerance’”, and 15 questions
+on the EU anti-racism framework (“Combating racism and xenophobia…”),
+which mention “Second World War”/“America”/“Africa” in the body.
+Text-only-drop attribution (371 rows, overlapping): <code>usa</code>
+117, <code>native</code> 61, <code>turkey</code> 55,
+<code>christian</code> 40, <code>Second World War</code> 30,
+<code>asia</code> 22, <code>israel</code> 22, <code>africa</code> 21,
+<code>china</code> 14, <code>india</code> 13, <code>america</code> 12,
+<code>istanbul</code> 9, <code>iran</code> 8, <code>syria</code> 8,
+<code>palestin</code> 7, <code>patriot</code> 5,
+<code>middle east</code> 4, <code>hamas</code> 3,
+<code>traditional values</code> 2, <code>quotas</code> 2,
+<code>danube</code> 1, <code>political correctness</code> 1, others 0.
+The manuscript should therefore say <em>subject/title-based</em> keyword
+filter explicitly.</p>
+<h2 id="residual-blind-spot-llama-topic-errors-unfixable-by-keywords">7.
+Residual blind spot: LLaMA topic errors (unfixable by keywords)</h2>
+<p>Keyword surgery cannot correct upstream misclassification. Examples
+found during the audit: the 1996 German hunting-licences question (in
+CAP-201, not a discrimination case), “Rampant euroscepticism in Hungary”
+(matched only in full text), the 2002 Pancevo/Danube pollution question,
+the 2024 genome-research question. These stem from the LLaMA topic
+assignment and motivate the planned <strong>LLM re-validation of all
+2,324 CAP-201 questions</strong> (Phase 2) with ~100 manual spot-checks;
+cf. the existing error taxonomy in
+<code>output/GemmaReport_2026-07-22.md</code>.</p>
+<h2 id="impact-sizing-projection-not-applied">8. Impact sizing
+(projection, NOT applied)</h2>
+<p>Applying the recommended configuration (§9) to the live data:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Quantity</th>
+<th style="text-align: left;">Current</th>
+<th style="text-align: left;">Projected</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">VII–IX kept</td>
+<td style="text-align: left;">1,323</td>
+<td style="text-align: left;"><strong>1,281</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">VII–IX excluded</td>
+<td style="text-align: left;">123 (8.5%)</td>
+<td style="text-align: left;">165 (11.4%)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">MEPs VII / VIII / IX (≥ 1 kept DV)</td>
+<td style="text-align: left;">237 / 226 / 129</td>
+<td style="text-align: left;"><strong>233 / 219 / 124</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Newly excluded (VII–IX / all terms)</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">49 (26/16/7) / 78 (29 pre-VII)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Re-included</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">7 in-window / 12 all terms</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">MEPs losing their only DV question</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">17 (4 / 7 / 6)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">MEPs gaining a first DV question</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">1</td>
+</tr>
+</tbody>
+</table>
+<p>Honest decomposition of the net −42 VII–IX questions:</p>
+<ul>
+<li><strong>≈ −39</strong> clean extra-EU removals (§5): the largest and
+most defensible change; it removes 17 MEPs whose DV presence is entirely
+spurious;</li>
+<li><strong>−4 to −6</strong> false/borderline drops that Phase 2 must
+adjudicate (Greek-based Turkish-minority and Turkish language-policy
+cases, plus the borderline cluster);</li>
+<li><strong>+7</strong> genuine in-window re-inclusions (4 BAME rows of
+one MEP; Bulgaria schools; Silesia accommodation refusal;
+African-descent resolution) and 5 pre-window re-inclusions with no
+window effect.</li>
+</ul>
+<p>Net: the headline count falls <strong>3.2%</strong> while measurement
+validity improves materially; the EU-relevant DV gains roughly +3
+questions. Panel construction and the minority-vs-non MEP counts (51
+<code>minority=1</code> in the current panel) must be recomputed when
+Phase 1 runs (<code>01 → 02 → 05</code>).</p>
+<h2 id="recommendations-and-3-phase-roadmap">9. Recommendations and
+3-phase roadmap</h2>
+<p><strong>Recommended Phase 1 regex</strong> (word boundaries, added
+keywords, inert-key removal, <code>iran</code>-stem fix; intentional
+stems kept for <code>china|turkey|syria|palestin|israel</code>):</p>
+<pre><code>(?i)christian|\bafrica\b|palestin|Second World War|\bhamas\b|danube|turkey|turkish|istanbul|\bindia\b|china|chinese|\busa\b|\basia\b|israel|\biran\b|iranians?|syria|middle east|\bnative\b|pakistan|tibet|uighur|uyghur|vietnam|guatemala|burma|myanmar|rwanda|congo|cambodia|afghan|egypt|iraq|jerusalem|brazil|kashmir|nepal|coptic|ahmadi|\bkaren\b|degar|lausanne</code></pre>
+<p>Design notes: <code>turkey</code> stays a stem but
+<code>turkish</code> must be added explicitly (the
+<code>chinese</code>/<code>china</code> asymmetry); the
+<code>syria</code> stem keeps catching <code>Assyrian/Syriac</code>
+(Middle-East minorities, per current practice); <code>iran</code> must
+not be a raw stem (“Tirana” trap, §4.3) — hence
+<code>\biran\b|iranians?</code>; <code>\bnative\b</code> is kept (§4.3);
+<code>america</code> and the 7 right-wing keys are dropped (0 subject
+hits, §6.1); <code>jerusalem</code> is needed to keep the Bedouin
+question excluded once <code>\busa\b</code> is fixed; the remaining
+small keys are cheap future-proofing; <code>korea</code> can be omitted
+(0 current hits).</p>
+<p>Deferred phases — <strong>“solo analisi per ora; fix completo in un
+secondo momento”</strong>:</p>
+<ol type="1">
+<li><strong>Phase 1 — revised regex + rerun.</strong> Implement the
+regex in <code>scripts/01_import_questions.R</code>, rerun
+<code>01 → 02 → 05</code>, produce an old-vs-new diff report (DV counts,
+MEP counts, coefficients) in <code>quality_reports/</code>.</li>
+<li><strong>Phase 2 — LLM re-validation (secondo momento).</strong>
+Re-validate all 2,324 CAP-201 questions (topic + scope), ~100 manual
+spot-checks; adjudicate the ⚠/▲ rows of §5 and Appendix A and the Kosovo
+case of §4.3.</li>
+<li><strong>Phase 3 — documentation.</strong> Update the measurement
+paragraph of <code>paper/MEPArticle_Updated.md</code> (subject-based
+filter; criteria; new counts), the numbers memo, and close this report’s
+status.</li>
+</ol>
+<h2 id="corrections-to-the-interim-session-notes-2026-11-06">10.
+Corrections to the interim session notes (2026-11-06)</h2>
+<ul>
+<li>Date range: <strong>10 Jun 1994 → 1 May 2024</strong> (not
+“1999–2024”);</li>
+<li>Only-DV leakage MEPs: <strong>17</strong> (4/7/6) with the two
+Brazilian-indigenous rows included (the interim “16”, 4/7/5, was
+pattern-limited);</li>
+<li>Inert keys on full text: <code>patriot</code> 5,
+<code>political correctness</code> 1, <code>traditional values</code> 2,
+<code>quotas</code> 2, <code>americ*</code> 15 (interim “1/0/0/0…” note
+superseded);</li>
+<li>Leakage list: <strong>49 VII–IX</strong> (not 47 — the 2 Brazilian
+rows came from the extended pattern);</li>
+<li>v2/proj2: “23 (15 in VII–IX)” was the word-boundary-only variant;
+the recommended configuration re-includes <strong>12 (7
+in-window)</strong>.</li>
+</ul>
+<h2 id="reproducibility-appendix">11. Reproducibility appendix</h2>
+<ul>
+<li>Audit scripts (session temp, not in repo):
+<code>/tmp/dict_audit5.R</code> … <code>/tmp/dict_audit9.R</code>; logs
+<code>/tmp/audit6.out</code>, <code>/tmp/audit7.out</code>,
+<code>/tmp/audit8b.out</code>, <code>/tmp/audit9.out</code>. This report
+is self-contained (§2, §4–§6, Appendix A embed all relevant
+findings).</li>
+<li>Core counts reproduce with:</li>
+</ul>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr); <span class="fu">library</span>(stringr); <span class="fu">library</span>(readr)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>epq <span class="ot">&lt;-</span> <span class="fu">read_rds</span>(<span class="st">&quot;data_processed/epq.rds&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">d =</span> <span class="fu">as.Date</span>(<span class="fu">as.numeric</span>(date), <span class="at">origin =</span> <span class="st">&quot;1970-01-01&quot;</span>),</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">term =</span> <span class="fu">case_when</span>(d <span class="sc">&gt;=</span> <span class="st">&quot;2009-07-14&quot;</span> <span class="sc">&amp;</span> d <span class="sc">&lt;=</span> <span class="st">&quot;2014-06-30&quot;</span> <span class="sc">~</span> <span class="st">&quot;VII&quot;</span>,</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>                          d <span class="sc">&gt;=</span> <span class="st">&quot;2014-07-01&quot;</span> <span class="sc">&amp;</span> d <span class="sc">&lt;=</span> <span class="st">&quot;2019-06-30&quot;</span> <span class="sc">~</span> <span class="st">&quot;VIII&quot;</span>,</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>                          d <span class="sc">&gt;=</span> <span class="st">&quot;2019-07-02&quot;</span> <span class="sc">&amp;</span> d <span class="sc">&lt;=</span> <span class="st">&quot;2024-06-15&quot;</span> <span class="sc">~</span> <span class="st">&quot;IX&quot;</span>,</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>                          <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">&quot;pre-VII&quot;</span>))</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>q   <span class="ot">&lt;-</span> <span class="fu">filter</span>(epq, <span class="fu">as.character</span>(subtopic) <span class="sc">==</span> <span class="st">&quot;201&quot;</span>)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>cur <span class="ot">&lt;-</span> <span class="st">&quot;(?i)christian|africa|palestin|Second World War|hamas|danube|turkey|istanbul|india|china|usa|america|asia|israel|iran|syria|middle east|native|patriot|political correctness|woke|reverse discrimination|traditional values|gender ideology|quotas&quot;</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>q   <span class="ot">&lt;-</span> q <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">cur_excl =</span> <span class="fu">str_detect</span>(subject, cur))</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co"># → 2,324 rows; 185 excluded; 2,139 kept; VII-IX: 1,323 kept / 123 excluded</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="co">#   MEPs ≥1 kept: VII 237 / VIII 226 / IX 129</span></span></code></pre></div>
+<ul>
+<li><strong>v2</strong> projection regex = same list with word
+boundaries on
+<code>africa|hamas|turkey|india|china|usa|asia|iran|syria|native|patriot|quotas</code>;
+<strong>proj2</strong> regex = the §9 recommended regex.</li>
+<li>Text counterfactual (§6.3): join <code>epq_3.0.csv</code> with
+<code>epq_minor_classified-llama_202502.csv</code> by
+<code>id = idOrig</code> (subtopic =
+<code>most_frequent_subtopic</code>, first row per id), filter
+<code>subtopic == "201"</code>, body =
+<code>sub("^[^\n]*\n", "", text)</code>.</li>
+</ul>
+<h2
+id="appendix-a-the-78-questions-newly-excluded-under-the-recommended-regex-all-terms">Appendix
+A — the 78 questions newly excluded under the recommended regex (all
+terms)</h2>
+<p>Verdicts: ✅ correct extra-EU exclusion · ⚠ FALSE (EU-relevant —
+Phase 2 should rescue) · ▲ borderline (decision).</p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Date</th>
+<th style="text-align: left;">Term</th>
+<th style="text-align: left;">MEP</th>
+<th style="text-align: left;">Subject (truncated)</th>
+<th style="text-align: left;">Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">1995-10-25</td>
+<td style="text-align: left;">pre</td>
+<td style="text-align: left;">1461</td>
+<td style="text-align: left;">Immediate release of Ibrahim Akso, a
+Turkish Kurd</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">1996-04-26</td>
+<td style="text-align: left;">pre</td>
+<td style="text-align: left;">2073</td>
+<td style="text-align: left;">Genuine participation by indigenous
+peoples in project ALA/93/55 in Guatemala</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">1996-12-06</td>
+<td style="text-align: left;">pre</td>
+<td style="text-align: left;">1178</td>
+<td style="text-align: left;">Ahmadi Muslims in Pakistan</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2000-02-03</td>
+<td style="text-align: left;">pre</td>
+<td style="text-align: left;">2335</td>
+<td style="text-align: left;">Repopulation of northern regions in Greece
+where minorities of Macedonian and Turkish origin are resident</td>
+<td style="text-align: left;">⚠ FALSE (Greece)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2002-08-13</td>
+<td style="text-align: left;">pre</td>
+<td style="text-align: left;">2281</td>
+<td style="text-align: left;">Ending of teaching in the Uighur language
+in the universities of eastern Turkestan (Xinjiang)</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2002-11-09</td>
+<td style="text-align: left;">pre</td>
+<td style="text-align: left;">1002</td>
+<td style="text-align: left;">Failure to denounce the Cooperation
+Agreement with Vietnam (infringement of Article 2)</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2003-05-02</td>
+<td style="text-align: left;">pre</td>
+<td style="text-align: left;">2281</td>
+<td style="text-align: left;">Situation of Mr Tohti Tunyaz, an ethnic
+Uighur sentenced to 11 years in prison</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2003-10-06</td>
+<td style="text-align: left;">pre</td>
+<td style="text-align: left;">4745</td>
+<td style="text-align: left;">Serious and persistent violations of the
+human rights of the Uighur minority in the Chinese province…</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2004-03-24</td>
+<td style="text-align: left;">pre</td>
+<td style="text-align: left;">4260</td>
+<td style="text-align: left;">Ethnic discrimination in funding and
+administration of reconstruction in Iraq</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2004-07-01</td>
+<td style="text-align: left;">pre</td>
+<td style="text-align: left;">24029</td>
+<td style="text-align: left;">Treatment of Turkish human rights
+organisation</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2004-07-21</td>
+<td style="text-align: left;">pre</td>
+<td style="text-align: left;">4521</td>
+<td style="text-align: left;">Protection of religious minorities in
+Egypt</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2004-10-26</td>
+<td style="text-align: left;">pre</td>
+<td style="text-align: left;">28586</td>
+<td style="text-align: left;">Statements by Turkish Prime Minister
+Erdogan</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2005-04-25</td>
+<td style="text-align: left;">pre</td>
+<td style="text-align: left;">1934</td>
+<td style="text-align: left;">Access to EPSO competitions by Turkish
+Cypriot nationals</td>
+<td style="text-align: left;">⚠ FALSE (EU citizens)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2006-03-03</td>
+<td style="text-align: left;">pre</td>
+<td style="text-align: left;">28587</td>
+<td style="text-align: left;">Commission funding of Turkish nationalist
+organisation</td>
+<td style="text-align: left;">▲ borderline</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2006-05-16</td>
+<td style="text-align: left;">pre</td>
+<td style="text-align: left;">28576</td>
+<td style="text-align: left;">Illegal abduction of Pakistani citizens in
+Greece</td>
+<td style="text-align: left;">⚠ FALSE (Greece)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2006-06-13</td>
+<td style="text-align: left;">pre</td>
+<td style="text-align: left;">4740</td>
+<td style="text-align: left;">Arrest by Chinese authorities of three
+Uyghur adult children of activist Rebiya Kadeer</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2006-07-11</td>
+<td style="text-align: left;">pre</td>
+<td style="text-align: left;">28587</td>
+<td style="text-align: left;">Turkish racism on Imbros and Tenedos</td>
+<td style="text-align: left;">✅ (Greek minority, Turkish state —
+current practice)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2007-07-01</td>
+<td style="text-align: left;">pre</td>
+<td style="text-align: left;">1956</td>
+<td style="text-align: left;">EU-Iraq trade and cooperation
+agreement</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2007-12-06</td>
+<td style="text-align: left;">pre</td>
+<td style="text-align: left;">28255</td>
+<td style="text-align: left;">Directives on beatings issued by Turkish
+Ministry for Religion</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2008-03-17</td>
+<td style="text-align: left;">pre</td>
+<td style="text-align: left;">1002</td>
+<td style="text-align: left;">Crushing of non-violent demonstrations in
+Tibet</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2008-03-18</td>
+<td style="text-align: left;">pre</td>
+<td style="text-align: left;">28117</td>
+<td style="text-align: left;">Democratic Republic of Congo</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2008-04-12</td>
+<td style="text-align: left;">pre</td>
+<td style="text-align: left;">28316</td>
+<td style="text-align: left;">Support for the indigenous population of
+Iraq</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2008-05-20</td>
+<td style="text-align: left;">pre</td>
+<td style="text-align: left;">4529</td>
+<td style="text-align: left;">Unmarked graves in Kashmir</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2008-05-27</td>
+<td style="text-align: left;">pre</td>
+<td style="text-align: left;">21817</td>
+<td style="text-align: left;">Chinese ‘repopulation’ of Tibet</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2008-06-13</td>
+<td style="text-align: left;">pre</td>
+<td style="text-align: left;">28134</td>
+<td style="text-align: left;">Violations of the human rights of
+Ahmadiyya Muslims in Pakistan</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2008-07-18</td>
+<td style="text-align: left;">pre</td>
+<td style="text-align: left;">23881</td>
+<td style="text-align: left;">Travelling prohibitions imposed on Turkish
+Cypriots</td>
+<td style="text-align: left;">▲ borderline</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2008-10-13</td>
+<td style="text-align: left;">pre</td>
+<td style="text-align: left;">23881</td>
+<td style="text-align: left;">Persecution of Catholics in Vietnam</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2008-10-31</td>
+<td style="text-align: left;">pre</td>
+<td style="text-align: left;">28513</td>
+<td style="text-align: left;">Ahmadi minority in Pakistan</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2009-03-17</td>
+<td style="text-align: left;">pre</td>
+<td style="text-align: left;">4519</td>
+<td style="text-align: left;">Protection of the Awá tribe in Brazil</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2009-11-02</td>
+<td style="text-align: left;">VII</td>
+<td style="text-align: left;">28117</td>
+<td style="text-align: left;">Human rights and religious persecution in
+the Democratic Republic of Congo</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2009-11-09</td>
+<td style="text-align: left;">VII</td>
+<td style="text-align: left;">28251</td>
+<td style="text-align: left;">Anti-minority laws in Pakistan</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2010-06-30</td>
+<td style="text-align: left;">VII</td>
+<td style="text-align: left;">1403</td>
+<td style="text-align: left;">Gojra communal violence in Pakistan</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2010-10-09</td>
+<td style="text-align: left;">VII</td>
+<td style="text-align: left;">97203</td>
+<td style="text-align: left;">Continuous violations of the human rights
+of the Degar (Montagnard) people, Central Highlands of Vietnam</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2010-10-12</td>
+<td style="text-align: left;">VII</td>
+<td style="text-align: left;">4521</td>
+<td style="text-align: left;">The case of Karma Samdrup and
+environmental activism in Tibet</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2010-10-28</td>
+<td style="text-align: left;">VII</td>
+<td style="text-align: left;">96981</td>
+<td style="text-align: left;">Human rights - the Ahmadiyya Movement</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2011-02-18</td>
+<td style="text-align: left;">VII</td>
+<td style="text-align: left;">4521</td>
+<td style="text-align: left;">The situation of the Karen people in
+Burma</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2011-03-10</td>
+<td style="text-align: left;">VII</td>
+<td style="text-align: left;">28584</td>
+<td style="text-align: left;">Extradition of Turkish trade unionist
+Gulaferit Unsal</td>
+<td style="text-align: left;">▲ borderline</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2011-03-30</td>
+<td style="text-align: left;">VII</td>
+<td style="text-align: left;">4393</td>
+<td style="text-align: left;">Assassination of Pakistan’s Minister for
+Minorities, Shahbaz Bhatti</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2011-04-28</td>
+<td style="text-align: left;">VII</td>
+<td style="text-align: left;">96733</td>
+<td style="text-align: left;">Possible funding for projects to protect
+minorities in Iraq</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2011-05-18</td>
+<td style="text-align: left;">VII</td>
+<td style="text-align: left;">96981</td>
+<td style="text-align: left;">Turkish AKP Government operations against
+the Kurds and reports of a massacre</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2011-06-16</td>
+<td style="text-align: left;">VII</td>
+<td style="text-align: left;">96660</td>
+<td style="text-align: left;">Sectarian Violence in post-revolution
+Egypt</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2011-06-16</td>
+<td style="text-align: left;">VII</td>
+<td style="text-align: left;">99416</td>
+<td style="text-align: left;">Justice for persons affected by Turkish
+policies</td>
+<td style="text-align: left;">▲ borderline</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2011-11-25</td>
+<td style="text-align: left;">VII</td>
+<td style="text-align: left;">96994</td>
+<td style="text-align: left;">VP/HR - The imprisonment of Tibetan
+monks</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2011-12-10</td>
+<td style="text-align: left;">VII</td>
+<td style="text-align: left;">96813</td>
+<td style="text-align: left;">VP/HR - Abduction of Coptic girls in
+Egypt</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2012-02-21</td>
+<td style="text-align: left;">VII</td>
+<td style="text-align: left;">28409</td>
+<td style="text-align: left;">VP/HR - Indigenous peoples of Guatemala
+and Colombia</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2012-05-23</td>
+<td style="text-align: left;">VII</td>
+<td style="text-align: left;">28358</td>
+<td style="text-align: left;">Funds from the EU budget for forced
+sterilisation in Rwanda</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2012-08-05</td>
+<td style="text-align: left;">VII</td>
+<td style="text-align: left;">4555</td>
+<td style="text-align: left;">Turkish as an official language of the
+European Parliament</td>
+<td style="text-align: left;">⚠ FALSE (EU context)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2012-09-27</td>
+<td style="text-align: left;">VII</td>
+<td style="text-align: left;">4393</td>
+<td style="text-align: left;">VP/HR - Ethnic minorities in Vietnam</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2012-10-23</td>
+<td style="text-align: left;">VII</td>
+<td style="text-align: left;">4393</td>
+<td style="text-align: left;">VP/HR - Chin ethnic and religious minority
+in Burma</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2012-12-17</td>
+<td style="text-align: left;">VII</td>
+<td style="text-align: left;">96786</td>
+<td style="text-align: left;">VP/HR - Victims of Pakistan’s blasphemy
+law</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2013-01-21</td>
+<td style="text-align: left;">VII</td>
+<td style="text-align: left;">97050</td>
+<td style="text-align: left;">Rapid naturalisation of Turkish citizens
+by the Turkish Cypriot puppet state</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2013-02-12</td>
+<td style="text-align: left;">VII</td>
+<td style="text-align: left;">96993</td>
+<td style="text-align: left;">VP/HR - Forced conversions in Pakistan:
+the case of Saba Waris</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2013-10-09</td>
+<td style="text-align: left;">VII</td>
+<td style="text-align: left;">4521</td>
+<td style="text-align: left;">VP/HR - Decision by Pakistani Government
+to downsize the Federal Ministry of Human Rights</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2014-02-25</td>
+<td style="text-align: left;">VII</td>
+<td style="text-align: left;">97198</td>
+<td style="text-align: left;">Update on discrimination against religious
+minorities in Pakistan</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2014-03-20</td>
+<td style="text-align: left;">VII</td>
+<td style="text-align: left;">96951</td>
+<td style="text-align: left;">VP/HR - Employment of religious minorities
+in Pakistan</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2014-07-01</td>
+<td style="text-align: left;">VIII</td>
+<td style="text-align: left;">96750</td>
+<td style="text-align: left;">Rights of the Turkish minority in Western
+Thrace, Greece</td>
+<td style="text-align: left;">⚠ FALSE (Greece)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2014-12-02</td>
+<td style="text-align: left;">VIII</td>
+<td style="text-align: left;">97198</td>
+<td style="text-align: left;">Arrest of Rimsha Masih in Pakistan:
+update</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2015-04-22</td>
+<td style="text-align: left;">VIII</td>
+<td style="text-align: left;">125107</td>
+<td style="text-align: left;">VP/HR - Detention of Mrs Victoire Ingabire
+in Rwanda</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2015-07-27</td>
+<td style="text-align: left;">VIII</td>
+<td style="text-align: left;">96897</td>
+<td style="text-align: left;">Educational bias in Pakistani schools</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2015-10-28</td>
+<td style="text-align: left;">VIII</td>
+<td style="text-align: left;">124790</td>
+<td style="text-align: left;">VP/HR - Protection of indigenous
+communities in Mato Grosso, Brazil</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2015-11-30</td>
+<td style="text-align: left;">VIII</td>
+<td style="text-align: left;">124866</td>
+<td style="text-align: left;">VP/HR - Recent attacks against Iraqi
+Turkmen</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2016-01-13</td>
+<td style="text-align: left;">VIII</td>
+<td style="text-align: left;">125049</td>
+<td style="text-align: left;">Kurdish women murdered by Turkish
+police</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2016-06-24</td>
+<td style="text-align: left;">VIII</td>
+<td style="text-align: left;">124873</td>
+<td style="text-align: left;">Risk of Turkish becoming an official EU
+language</td>
+<td style="text-align: left;">⚠ FALSE (EU context)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2016-12-15</td>
+<td style="text-align: left;">VIII</td>
+<td style="text-align: left;">28276</td>
+<td style="text-align: left;">VP/HR - Religious war in Afghanistan</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2017-07-06</td>
+<td style="text-align: left;">VIII</td>
+<td style="text-align: left;">124828</td>
+<td style="text-align: left;">Racial profiling of the Pashtuns in
+Pakistan</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2017-11-28</td>
+<td style="text-align: left;">VIII</td>
+<td style="text-align: left;">188624</td>
+<td style="text-align: left;">EU development projects and humanitarian
+aid in Myanmar - red lines</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2018-01-10</td>
+<td style="text-align: left;">VIII</td>
+<td style="text-align: left;">96813</td>
+<td style="text-align: left;">VP/HR - Uighur ‘re-education’ camps</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2018-01-15</td>
+<td style="text-align: left;">VIII</td>
+<td style="text-align: left;">124823</td>
+<td style="text-align: left;">VP/HR - Economic treaty and human rights
+in Guatemala</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2018-03-09</td>
+<td style="text-align: left;">VIII</td>
+<td style="text-align: left;">97203</td>
+<td style="text-align: left;">VP/HR - Thailand: refugees of Cambodian
+and Vietnamese nationality</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2018-11-10</td>
+<td style="text-align: left;">VIII</td>
+<td style="text-align: left;">38398</td>
+<td style="text-align: left;">App by means of which EU residents can be
+reported to the Turkish police</td>
+<td style="text-align: left;">▲ borderline</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2018-12-19</td>
+<td style="text-align: left;">VIII</td>
+<td style="text-align: left;">24942</td>
+<td style="text-align: left;">Education through the medium of Turkish in
+Greece</td>
+<td style="text-align: left;">⚠ FALSE (Greece)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2019-09-01</td>
+<td style="text-align: left;">IX</td>
+<td style="text-align: left;">28307</td>
+<td style="text-align: left;">VP/HR - Brazilian President’s assault on
+the rights of indigenous peoples</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2020-07-05</td>
+<td style="text-align: left;">IX</td>
+<td style="text-align: left;">197650</td>
+<td style="text-align: left;">Repression encouraged by the Chinese
+authorities in Tibet, on the pretext of tackling COVID-19</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2020-10-14</td>
+<td style="text-align: left;">IX</td>
+<td style="text-align: left;">197539</td>
+<td style="text-align: left;">Sensitive personal data wrongfully
+published by EEAS collaborators in the upcoming election in Myanmar</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2020-10-29</td>
+<td style="text-align: left;">IX</td>
+<td style="text-align: left;">197611</td>
+<td style="text-align: left;">The militarised educational and training
+system in Tibet</td>
+<td style="text-align: left;">✅</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2021-11-05</td>
+<td style="text-align: left;">IX</td>
+<td style="text-align: left;">197627</td>
+<td style="text-align: left;">European report on Islamophobia drafted by
+a Turkish research centre closely linked to the Muslim Brotherhood</td>
+<td style="text-align: left;">▲ borderline</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2022-02-03</td>
+<td style="text-align: left;">IX</td>
+<td style="text-align: left;">197415</td>
+<td style="text-align: left;">Turkish Cypriot peace activists are not a
+threat to Turkish national security</td>
+<td style="text-align: left;">▲ borderline</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2024-04-17</td>
+<td style="text-align: left;">IX</td>
+<td style="text-align: left;">28353</td>
+<td style="text-align: left;">Human genome research projects in Europe
+conducted by companies linked to the Chinese Government and
+military</td>
+<td style="text-align: left;">▲ borderline</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Tally:</strong> ✅ 63 · ⚠ FALSE 7 (of which 4 in-window) · ▲
+borderline 8 (of which 6 in-window). Rows 1–29 = pre-VII (no window
+impact); rows 30–78 = 49 in-window drops.</p>
+<p>Phase 2 implications: if all in-window ⚠ rows are rescued, projected
+VII–IX kept rises from 1,281 to <strong>1,285</strong>; if all in-window
+▲ rows are also kept, the plausible range is <strong>1,281 →
+1,291</strong> (against the current 1,323). The single most important
+in-window corrections remain §4.2’s 7 re-inclusions — they dwarf the 4–6
+rescues in this Appendix in DV terms (one MEP’s entire BAME cluster is
+currently absent from the DV).</p>
+<hr />
+<p><em>Report generated 2026-11-06; read-only audit; no pipeline or
+manuscript changes. Next step on approval: Phase 1 (§9).</em></p>
+</body>
+</html>

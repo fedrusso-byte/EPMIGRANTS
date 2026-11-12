@@ -1,10 +1,11 @@
-# 📌 TO DO — EPmigrants (aggiornato 2026-11-05, dopo merge VII + re-running pipeline)
+# 📌 TO DO — EPmigrants (aggiornato 2026-11-06 pomeriggio: FIX FASE 1 filtro CAP-201 ESEGUITO + rerun pipeline; dopo merge VII + re-running pipeline del 2026-11-05)
 
 ## 🗂️ Stato sintetico
 - Pipeline funzionante su **VII–IX legislature** (2009–2024) dopo il merge del coding VII (eseguito 2026-11-05): N modelli **9.850** (era 6.372), 1.543 MEP unici (era 1.115), 51 MEP `minority=1` (era 34).
-- **H3 resta l'unica ipotesi sostenuta ma attenuata**: interazione `minority × mipex_center` β ≈ **0.0398, CrI 95% [0.0022, 0.079]** (era 0.066 [0.016, 0.118]) — CrI ancora sopra 0, entità circa dimezzata. H1 e H2 non significative ai valori di riferimento (`output/bayesian_model_results.csv`).
-- **Numeri da integrare a mano nel ms**: `quality_reports/2026-11-05_numbers-to-change_VII-extension.md` (+ QA note: `quality_reports/2026-11-05_QA-note_VII-merge-and-rerun.md`).
+- **H3 dopo il fix filtro CAP-201 (2026-11-06): interazione `minority × mipex_center` positiva ma la CrI include ora lo zero** — β ≈ **0.0376, CrI 95% [−0.002, 0.080]** (era 0.066 [0.016, 0.118] a VIII/IX; 0.0398 [0.0022, 0.079] dopo il merge VII): evidenza indicativa, non più supportata al criterio CrI>0. H1 e H2 non significative (`output/bayesian_model_results.csv`).
+- **Numeri da integrare a mano nel ms**: `quality_reports/2026-11-06_CAP201-filter-implementation.md` §7 (paragrafo misurazione + Table 1 post-fix — **sostituisce** i valori §1/§2 del memo) + addendum §5 in `quality_reports/2026-11-05_numbers-to-change_VII-extension.md` (+ QA note: `quality_reports/2026-11-05_QA-note_VII-merge-and-rerun.md`).
 - 🔄 **NOVITÀ 2026-10-14 → eseguita 2026-11-05**: coding VII fuso nel master (1.299 → 1.770 righe, 63 minority=1) e pipeline rieseguita. Restano aperte le 3 richieste a Zeynep (link/fonti, nota Le Brun, conferma 30 casi di dubbio) + il backlog dei **10 MEP VIII/IX senza coding** (v. QA note §3).
+- 📋 **2026-11-06 — audit filtro dizionario CAP-201 (DV discriminazione): FIX FASE 1 ESEGUITO** → regex §9 del audit verbatim + allowlist Option-B dei 7 falsi ⚠ in `scripts/01_import_questions.R`; pipeline rieseguita per intero, diff verificato → **`quality_reports/2026-11-06_CAP201-filter-implementation.md`** (VII–IX mantenute 1.323 → **1.285**; MEP roster 224/212/113; **H3 ora con CrI che include lo zero**). Restano da fare: Fase 2 (LLM) e integrazione del ms — sezione 6️⃣.
 - Manoscritto ancora limitato alla VIII/IX legislatura; teoria di H3 sotto revisione dopo SISP 2026 ("troppo sottile"); memo feedback ancora da compilare.
 
 ---
@@ -41,7 +42,7 @@
 - [ ] Interpretare H1–H3 sul campione allargato (Federico): **H3 0.0398 [0.0022, 0.079] (era 0.0658 [0.016, 0.117])**; nel modello CMP `minority` perde sig. (0.472 [−0.362, 1.171], era 1.059 [0.080, 1.917]), interazione sale a 0.115 [−0.032, 0.290]. Effetti marginali di `minority` sul range MIPEX: ricalcolare sul nuovo fit (06 output).
 
 ## 📝 Step 4 — Report e manoscritto
-- [x] Report nuovi creati 2026-11-05: `quality_reports/2026-11-05_QA-note_VII-merge-and-rerun.md` + `quality_reports/2026-11-05_numbers-to-change_VII-extension.md` (memo numeri per il ms). ⚠️ `quality_reports/bayesian_model_results_report.md` resta ai numeri VIII/IX — da rigenerare o pensionare.
+- [x] Report nuovi creati 2026-11-05: `quality_reports/2026-11-05_QA-note_VII-merge-and-rerun.md` + `quality_reports/2026-11-05_numbers-to-change_VII-extension.md` (memo numeri per il ms). ✅ `quality_reports/bayesian_model_results_report.md` aggiornato ai numeri VII–IX il 2026-11-05 (gemello `.html` incluso: sottotitolo, tabelle, osservazioni e conclusioni ripulite dai residui VIII/IX; puntatori a `output/bayesian_model_results.csv` + QA note).
 - [ ] `paper/MEPArticle_Updated.md`: sezione dati/campione (aggiungere la VII), risultati e Tabella 1, limitazioni (rimuovere la clausola "solo VIII/IX"), integrare la sezione teoria H3 revisionata da Zeynep quando pronta. **Mappa riga-per-riga nel memo numeri (§1).**
 - [ ] Aggiornare gli stati in `PROJECT_INDEX.md` (ancora al 2026-09-09) e rigenerare Figure 1–2 del ms con il master nuovo (lo script descrittivo dei conteggi 20/30 e 225/124 non è nel pipeline: ricalcolare con lo stesso criterio o aggiornare ai candidabili del memo §3).
 
@@ -106,10 +107,24 @@ Forzare l'uso dell'ottimizzatore `nlminb` con un numero elevato di iterazioni su
 
 ---
 
+# 6️⃣ DV CAP-201 — audit filtro dizionario: FASE 1 (fix regex + rerun) ESEGUITA (2026-11-06)
+
+- **Eseguito 2026-11-06 (pomeriggio)**: `scripts/01_import_questions.R` aggiornato con la regex §9 del audit (verbatim, verificata byte-identical) + allowlist Option-B dei 7 falsi ⚠ come `epq$id` verificati dal vivo (NB: la lista numerica del piano erano id **MEP** dall'Appendice A). Pipeline rieseguita per intero (01→02→03→05_models→05_Bayesian→06→07), fit brms rifatti da zero (max R̂ 1.0039/1.0033; min ESS 1.538/1.609). Snapshot pre-fix: `output/archive_cap201_prefilter_2026-11-06/`; log/diff in `quality_reports/session_logs/2026-11-06_cap201-fix-*.log`.
+- **Risultati verificati** (rapporto completo: `quality_reports/2026-11-06_CAP201-filter-implementation.md`):
+  - CAP-201 a finestra VII–IX: mantenute **1.323 → 1.285**; escluse 123 → **161** (−45 nuove esclusioni extra-EU, coerenti coi verdetti ✅ dell'Appendice A; +7 reinclusioni vere; +4 falsi ⚠ reintegrati).
+  - MEP ≥1 DV nel roster (`df_merged_3`): VII/VIII/IX **227/218/117 → 224/212/113** (VI 145→143). Composizione pannello INVARIATA (9.850 righe, 1.543 MEP, 51 minority=1; minority per termine 26/19/20 modello e 27/21/23 roster).
+  - MEP che perdono l'intera presenza DV: **12** (audit 17 a config pura − 4 reintegrati − 1 fuori roster); guadagnano la prima DV: **2** (124866 VIII, 130100 IX); BAME MEP 124948: **+4** (12→16).
+  - **H3: 0.0398 [0.0022, 0.079] → 0.0376 [−0.002, 0.080] — la CrI include ora lo zero**: evidenza indicativa, non più supportata al criterio CrI>0 (IRR ≈ 1.038). H1/H2 ns; LIBE resta sig (0.507 [0.270, 0.743]); CMP interazione 0.107 [−0.038, 0.275] ns.
+- **Prossimo passo (Fase 3 residua)**: integrare a mano nel ms il paragrafo di misurazione e Table 1 di §7 di `2026-11-06_CAP201-filter-implementation.md` (con le frasi sostitutive H3/LIBE); sostituisce anche i valori §1/§2 del memo 2026-11-05 (addendum §5).
+- [ ] **Fase 2 (secondo momento)**: ri-validazione LLM di tutte le 2.324 domande CAP-201 + ~100 spot-check manuali; arbitrare i 6 casi ▲ a finestra (tuttora esclusi) e il caso Kosovo 2011; decidere se estendere l'allowlist.
+
+---
+
 # 📎 Riferimenti rapidi
 - Specifica di ricerca: `quality_reports/research_spec_minority_attention.md`
 - Piano di implementazione: `quality_reports/plans/2026-09-09_minority-attention-implementation.md`
 - Roadmap passi successivi: `quality_reports/plans/2026-09-09_minority-attention-next-steps.md`
 - Memo SISP: `quality_reports/2026-09-09_sisp-feedback.md`
 - Orchestratore pipeline: `scripts/run_pipeline.R` (`pipeline_config` in testa al file)
+- Audit dizionario CAP-201 / DV (2026-11-06, fix rimandato): `quality_reports/2026-11-06_CAP201-dictionary-audit.md` — v. sezione 6️⃣
 - Worksheet VI/VII (per rigenerare se il roster cambia): `scripts/utils/minority_coding_worksheet_6th7th.R`

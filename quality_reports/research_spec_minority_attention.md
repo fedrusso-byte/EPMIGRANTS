@@ -3,8 +3,8 @@
 **Project:** EPmigrants — Migration, Political Representation, and Policy Responsiveness in the European Parliament
 **Working title:** *Does Biography Matter? Minority Background, National Anti-Discrimination Frameworks, and Legislative Attention in the European Parliament*
 **Authors:** Zeynep Mentesoglu Tardivo (Università degli Studi di Milano); Federico Russo (Università del Salento)
-**Created / last updated:** 2026-09-09
-**Status:** CURRENT — shared design reference for both authors. §7 (H3 theory) is under active revision following SISP 2026 feedback.
+**Created:** 2026-09-09 · **Last updated:** 2026-11-05 (7th-term merge + VII–IX refit)
+**Status:** CURRENT — shared design reference for both authors. §7 (H3 theory) is under active revision following SISP 2026 feedback. §4 numbers updated to the VII–IX refit (2026-11-05).
 
 ---
 
@@ -57,36 +57,39 @@ disproportionately *activate* their biography, converting institutional resource
 attention (informed by REPCHANCE evidence on "institutional conduits").
 **Status: judged "too thin" at SISP 2026; revision in progress — see §7.**
 
-## 4. Hypotheses and Current Empirical Status (8th–9th terms)
+## 4. Hypotheses and Current Empirical Status (7th–9th terms)
 
 | # | Hypothesis | Status (Bayesian ZINB, manuscript Table 1) |
 |---|---|---|
-| H1 | MEPs with migratory or racialised minority backgrounds are more likely than other MEPs to submit parliamentary questions addressing discrimination-related issues. | **Not supported** — β = 0.327, 95% CrI [−0.595, 1.151] |
-| H2 | MEPs elected in countries with stronger anti-discrimination policy frameworks devote greater parliamentary attention to discrimination-related issues. | **Not supported** — β = −0.0007, 95% CrI [−0.013, 0.011] |
-| H3 | The relationship between minority background and discrimination-related parliamentary attention becomes stronger as national anti-discrimination frameworks become more comprehensive. | **Supported** — β = 0.0658, 95% CrI [0.016, 0.117] |
+| H1 | MEPs with migratory or racialised minority backgrounds are more likely than other MEPs to submit parliamentary questions addressing discrimination-related issues. | **Not supported** — β = 0.418, 95% CrI [−0.247, 1.030] |
+| H2 | MEPs elected in countries with stronger anti-discrimination policy frameworks devote greater parliamentary attention to discrimination-related issues. | **Not supported** — β = 0.0009, 95% CrI [−0.010, 0.011] |
+| H3 | The relationship between minority background and discrimination-related parliamentary attention becomes stronger as national anti-discrimination frameworks become more comprehensive. | **Supported, though attenuated** — β = 0.0398, 95% CrI [0.0022, 0.079] (was 0.0658 [0.016, 0.117] on the 8th–9th-only fit) |
 
-Secondary correlates: LIBE Committee membership β = 0.429, 95% CrI [0.079, 0.751]; gender (male)
-β = 0.015, 95% CrI [−0.191, 0.219]. The frequentist `glmmTMB` counterpart corroborates H3
-(M4 `minority:mipex_center`, p = 0.024). Full estimates: `output/bayesian_model_results.csv` and
+Secondary correlates: LIBE Committee membership β = 0.470, 95% CrI [0.227, 0.703]; gender (male)
+β = 0.016, 95% CrI [−0.143, 0.171]. The frequentist `glmmTMB` counterpart corroborated H3 on the
+8th/9th-only fit (M4 `minority:mipex_center`, p = 0.024); on the VII–IX refit the pre-existing
+NaN-SE issue of `05_models.R` moved from M1/M3 to M1/M4 (open — see `TO_DO.txt` §2), so the
+Bayesian estimates remain the reference. Full estimates: `output/bayesian_model_results.csv` and
 `quality_reports/bayesian_model_results_report.md`.
 
 ## 5. Data and Measurement
 
 - **Corpus:** EUQuest — ~180,000 Questions for Written Answer (1994–2024), classified into 20 CAP
   policy topics (LLaMA-assisted), with a comprehensive MEP-level biographical and political dataset.
-- **Sample:** MEPs elected in 26 EU Member States and the United Kingdom, 8th (2014–2019) and
-  9th (2019–2024) terms; MEP-year panel.
+- **Sample:** MEPs elected in 26 EU Member States and the United Kingdom, 7th–9th terms
+  (2009–2024); MEP-year panel (N = 9,850 MEP-years; 1,543 unique MEPs; 51 minority MEPs).
 - **Dependent variable:** annual count per MEP of questions under CAP minor-topic 201, *"Ethnic
-  Minority and Racial Group Discrimination"* (~1.1% of all 8th/9th-term questions; ≥1 such question
-  from 225 MEPs in the 8th and 124 in the 9th term). Automated classification accuracy ≈ 75%, so
+  Minority and Racial Group Discrimination"* (~1% of all term questions; per-term counts of MEPs with ≥1 such question in the VII–IX panel:
+  227 / 218 / 117 — wording pending the criterion decision, see numbers memo §3). Automated classification accuracy ≈ 75%, so
   code-201 questions were manually reviewed and cleaned (excluded, e.g., exclusively anti-Christian
   discrimination; cases outside Europe). Robustness DVs: any-question binary; term-level count.
 - **Minority background (key IV):** hand-coded — first- or second-generation migrant from a non-EU
   country outside the Global North; Roma MEPs included (racialised minority exposed to persistent
   ethnic discrimination). The EP collects no systematic ethnicity data and place of birth is an
   incomplete proxy (misses second-generation MEPs), so the indicator was built through original
-  biographical research on public sources. Current counts: **20** minority-background MEPs in the
-  8th and **30** in the 9th term (ENAR benchmark: 3.3% / 28 and 4.5% / 39 MEPs respectively).
+  biographical research on public sources. Current hand-coded counts per term: **16** (7th), **20** (8th), **30** (9th) minority-background MEPs;
+  ENAR benchmark for the 8th/9th terms: 3.3% / 28 and 4.5% / 39 MEPs respectively. Unique
+  minority MEPs in the VII–IX estimation sample: **51** (was 34 on VIII–IX).
 - **MIPEX anti-discrimination score:** 0–100 index of the legal and institutional framework
   protecting against discrimination by racial or ethnic origin, religion, and nationality; available
   **2007+**; matched to MEP-year by country of election (nearest *preceding* assessment when the
@@ -138,6 +141,11 @@ Discussants judged the H3 rationale too thin. Owner: Zeynep. First step: complet
 
 ## 8. Scope Extension — 7th (optionally 6th) Term
 
+> **Executed 2026-11-05:** the 7th-term coding was merged (master 1,299 → 1,770 rows) and the
+> pipeline re-fitted on VII–IX (N = 9,850); see `TO_DO.txt` §1–3 and
+> `quality_reports/2026-11-05_QA-note_VII-merge-and-rerun.md`. The text below is kept as the
+> pre-execution reference.
+
 - **7th term (2009–2014):** all inputs are already in-repo (biographies `data/meps.csv`; groups and
   committees `data/meps_com_gr.csv`; questions `epq_3.0.csv` 1994–2025; MIPEX 2007–2024;
   country-level variables 2004–2024; MEP-year panel via `02_df_setup.R`). Only the minority coding
@@ -154,8 +162,9 @@ Discussants judged the H3 rationale too thin. Owner: Zeynep. First step: complet
 1. The DV captures attention, not its direction or normative content — right-wing nationalist MEPs
    also raise CAP 201 issues, possibly critically; textual analysis is needed to separate protective
    advocacy from oppositional framing.
-2. Few minority-background MEPs (20 + 30 in the current sample) → limited power; estimates may be
-   sensitive to a few individuals. The 7th-term extension mitigates this.
+2. Few minority-background MEPs (51 in the VII–IX estimation sample, up from 34) → limited power;
+   estimates may be sensitive to a few individuals. The 7th-term extension mitigates this; the
+   optional 6th term would add further observations.
 3. MIPEX captures formal legal strength, not implementation or experienced discrimination.
 4. Hand-coding for earlier terms depends on biographical availability; a cross-coder consistency
    spot-check is recommended.
