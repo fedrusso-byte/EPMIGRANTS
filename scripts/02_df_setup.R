@@ -10,12 +10,6 @@ dir.create(here("output"), showWarnings = FALSE, recursive = TRUE)
 # Pulisce l'ambiente globale
 rm(list = ls())
 
-check_na <- function(dataset) {
-  dataset %>% 
-    dplyr::summarise_all(list(~sum(is.na(.)))) %>% 
-    as.data.frame()
-}
-
 clean_names <- function(x) {
   x <- tolower(x)                         
   x <- gsub("[^a-z ]", "", x)            

@@ -9,6 +9,10 @@ library(patchwork)
 library(here)
 library(brms)
 
+# Seed the random stream for posterior_predict resampling (audit item 5,
+# 2026-11-18): makes the figure's simulated draws reproducible across runs.
+set.seed(20260321)
+
 message("   Loading Bayesian model and data for visualization...")
 df_model_data <- readRDS(here("output", "df_model_data.rds"))
 # brms models saved with the 'file' argument create .rds files

@@ -50,6 +50,11 @@ country_classification <- tribble(
     founding_member = country %in% c("DE", "FR", "IT", "BE", "NL", "LU")
   )
 
+  # TODO(FR) provenance (audit item 6, 2026-11-18): the header comment here
+  # mentions a CSV (claimmakingpressure.csv) that is NOT the input used —
+  # country_features below was assembled by hand. Record the actual sources
+  # and vintages for the two hardcoded series (discrimination_mean and
+  # cmp_mean) so the block can be regenerated rather than copy-paste-maintained.
 # Dati time-invariant estratti dal file claimmakingpressure.csv
 message("  Adding discrimination and CMP time-invariant data...")
 country_features <- tribble(
@@ -92,6 +97,10 @@ year_panel <- crossing(
 ) |> 
   left_join(country_classification, by = "country")
 
+  # TODO(FR) provenance (audit item 6, 2026-11-18): euro accession years are
+  # hardcoded — record the source (EUR-Lex / European Commission euro-area
+  # convergence pages) and note that the `year >= euro_year` convention below
+  # treats cash-changeover years as euro years for panel coding.
 euro_entry_year <- tribble(
   ~country, ~euro_year,
   "AT", 1999, "BE", 1999, "FI", 1999, "FR", 1999, "DE", 1999, "IE", 1999, "IT", 1999, "LU", 1999, "NL", 1999, "ES", 1999, "PT", 1999,
@@ -116,6 +125,10 @@ year_panel <- year_panel |>
     TRUE ~ 1L
   ))
 
+  # TODO(FR) provenance (audit item 6, 2026-11-18): the populist-in-government
+  # series is hand-coded country-year/term ranges. Record the coding source
+  # (e.g. PopuList / expert surveys / CHES) and the as-of date, and flag any
+  # 2024 boundary judgment calls (e.g. SE 2022-, NL single-term windows).
 # Populist/anti-establishment in government
 year_panel <- year_panel |> 
   mutate(populist_in_gov = case_when(
@@ -158,6 +171,10 @@ year_panel <- bind_cols(year_panel, as.data.frame(dummies_all))
 country_classification <- country_classification |> mutate(across(where(is.logical), as.integer))
 year_panel <- year_panel |> mutate(across(where(is.logical), as.integer))
 
+  # TODO(FR) provenance (audit item 6, 2026-11-18): the EU net-budget-position
+  # statuses are hand-coded from the European Commission "EU budget in your
+  # country" publications — record the publication vintages used (MFF planning
+  # vs. payments data) and the Contributor/Recipient classification rule.
 ############################ Net budget position -> year_panel #####################################
 
 eu_budget_status <- tribble(

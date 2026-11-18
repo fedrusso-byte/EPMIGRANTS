@@ -129,6 +129,7 @@ bayesian_model_m1_total <- brm(
   warmup = 1500,
   cores = 4,
   control = list(adapt_delta = 0.95),
+  seed = 20260321,
   file = here("output", "bayesian_model_m1_total")
 )
 
@@ -160,6 +161,7 @@ bayesian_model_m2_direct <- brm(
   warmup = 1500,
   cores = 4,
   control = list(adapt_delta = 0.95),
+  seed = 20260321,
   file = here("output", "bayesian_model_m2_direct")
 )
 

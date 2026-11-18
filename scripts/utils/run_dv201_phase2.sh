@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 # scripts/utils/run_dv201_phase2.sh (2026-11-13)
+# RETIRED 2026-11-18 (audit remediation item 1, Option A). HISTORY: this
+# one-off dated runner waited for the primary re-run (01..07), archived the
+# stale TERM/LIBE brms caches, and re-ran sens + TERM + LIBE. PROBLEM: under
+# the 2026-11-17 refined-DV promotion a rerun of this script would HARD-FAIL
+# on 05_models_Bayesian_TERM.R (recomputed minority-event invariants) while
+# refitting on the wrong (keyword) vintage. The variant scripts now carry the
+# refined-DV promotion themselves (2026-11-18, Option A) and are refit by
+# scripts/utils/run_promotion_refits_2026-11-18.sh.
 # Phase-2 runner for the DV-201 validation disposition: waits for the primary
 # re-run (01..07) to finish, archives the stale TERM/LIBE brms caches
 # (brm(file=) caches by path: formulas are unchanged, so the pre-DV-201 fits
@@ -10,6 +18,15 @@
 # Each step logs to quality_reports/session_logs/2026-11-13_dv201_phase2.log
 set -uo pipefail
 cd "$(dirname "$0")/../.."
+
+# Retirement guard (2026-11-18): see header above. Override only if you truly
+# intend to replay the 2026-11-13 procedure against today's tree.
+if [ "${FORCE_DV201_PHASE2:-0}" != "1" ]; then
+  echo "run_dv201_phase2.sh was RETIRED on 2026-11-18 — use scripts/utils/run_promotion_refits_2026-11-18.sh" >&2
+  echo "(override with FORCE_DV201_PHASE2=1)" >&2
+  exit 1
+fi
+
 LOGDIR=quality_reports/session_logs
 DATE=2026-11-13
 

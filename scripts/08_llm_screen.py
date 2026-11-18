@@ -71,6 +71,21 @@ from pathlib import Path
 
 OLLAMA_URL = "http://localhost:11434/api/chat"
 CORPUS_DEFAULT = "data_raw/epq_3.0.csv"
+# WINDOW CROSS-REFERENCE (audit item 8 fix, 2026-11-18 — doc-only; constants
+# unchanged). This screen window is deliberately a SUPERSET of the analysis
+# layers downstream:
+#   1. LLM screen (this script):  2009-07-01 <= date < 2024-08-01 (in_window)
+#   2. Question inclusion (scripts/01_import_questions.R):
+#        2009-07-14 <= date <= 2024-06-15 (validated canonical window;
+#        1,319 kept / 1,291 subtopic-201)
+#   3. Covariate aggregation (scripts/04_download_problem_indicators.R):
+#        no independent date cutoff — covariates are aggregated per EPDG
+#        legislature (terms VII-IX) with no within-window date filter.
+# The superset design means the screen never drops a corpus row that 01's
+# inclusion criteria would keep; the narrower 01 bounds are what feed DV
+# derivation and the estimation panel. Term boundaries agree across layers:
+# both assign 2019-07-01 to term IX (01's helper at lines ~184-185; this
+# script starts VIII at 2014-07 and IX at 2019-07).
 WINDOW_START = "2009-07-01"
 WINDOW_END_EXCL = "2024-08-01"
 BODY_MAX_WORDS = 260

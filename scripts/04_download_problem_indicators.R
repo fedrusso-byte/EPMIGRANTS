@@ -29,7 +29,7 @@ eu_countries <- c(
   "NL", "PL", "PT", "RO", "SE", "SI", "SK", "UK"
 )
 
-FORCE_REDOWNLOAD <- TRUE
+FORCE_REDOWNLOAD <- identical(Sys.getenv("EP_COVARIATES_FORCE"), "1")
 cache_path <- here("data_processed", "covariates_cache.rds")
 
 if (!FORCE_REDOWNLOAD && file.exists(cache_path)) {
@@ -86,6 +86,10 @@ if (!FORCE_REDOWNLOAD && file.exists(cache_path)) {
     mutate(gdp_growth = 100 * (gdp_per_capita / dplyr::lag(gdp_per_capita) - 1)) %>%
     ungroup()
   
+  # TODO(FR) provenance (audit item 6, 2026-11-18): this 2005:2020 UK GDP-
+  # growth series was hand-collected because Eurostat drops UK coverage after
+  # Brexit. Record the source (ONS database series + vintage retrieved) so
+  # the injection stays documentable/regenerable in the paper.
   message("    -> Injecting historical UK GDP growth data missing from Eurostat...")
   uk_gdp_history <- tibble(
     country = "UK",

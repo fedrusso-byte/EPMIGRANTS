@@ -738,7 +738,7 @@ are therefore not demonstrably associated with a more pronounced
 difference between minority-background and other MEPs in their attention
 to discrimination-related issues.
 
-**Robustness.** Two further checks assess the sensitivity of these
+**Robustness.** Three further checks assess the sensitivity of these
 results. The first concerns the treatment of LIBE Committee membership.
 Because committee assignment is plausibly shaped by the same background
 characteristics and interests that drive questioning behaviour, the
@@ -767,9 +767,23 @@ coefficient on the refined measure, a more attenuated one on the
 keyword-based measure — is what one would expect if the keyword-based
 measure carries positive-classification noise that attenuates the
 association: refining the measure by keeping only verified in-scope
-questions sharpens, rather than alters, the substantive conclusions.
-Under both operationalizations H1 is supported, H2 is not supported,
-and the H3 interaction is never credibly different from zero.
+questions sharpens, rather than alters, the substantive conclusions. The third check
+concerns the estimation paradigm. Refitting the two specifications by
+maximum likelihood — the same zero-inflated negative binomial multilevel
+models on the same estimation panel, now estimated with a frequentist
+rather than a Bayesian engine — reproduces the primary estimates almost
+exactly: the minority-background coefficients are β = 1.589 (SE = 0.417;
+95% CI \[0.771, 2.408\]; incidence-rate ratio 4.90, \[2.16, 11.11\]) in the
+total-effect specification and β = 1.546 (SE = 0.410; 95% CI \[0.742,
+2.350\]; 4.69 \[2.10, 10.49\]) in the direct-effect specification, against
+the Bayesian estimates of 1.543 and 1.525; the LIBE coefficient is equally
+close (β = 0.680, 95% CI \[0.303, 1.056\], against the Bayesian 0.704,
+\[0.341, 1.056\]); and the MIPEX main and interaction effects remain
+negligible under both engines, with 95% CIs on the interaction of
+\[−0.061, 0.060\] and \[−0.066, 0.053\] mirroring the Bayesian intervals.
+Under both operationalizations and under both estimation engines H1 is
+supported, H2 is not supported, and the H3 interaction is never credibly
+different from zero.
 
 6.  **Conclusion**
 

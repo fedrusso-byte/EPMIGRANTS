@@ -272,6 +272,7 @@ bayesian_model_m1_sensllm_r2 <- brm(
   prior = priors_common,
   chains = 4, iter = 4000, warmup = 1500, cores = 4,
   control = list(adapt_delta = 0.95),
+  seed = 20260321,
   file = here("output", "bayesian_model_m1_sensllm_r2")
 )
 
@@ -287,6 +288,7 @@ bayesian_model_m2_sensllm_r2 <- brm(
   prior = priors_common,
   chains = 4, iter = 4000, warmup = 1500, cores = 4,
   control = list(adapt_delta = 0.95),
+  seed = 20260321,
   file = here("output", "bayesian_model_m2_sensllm_r2")
 )
 

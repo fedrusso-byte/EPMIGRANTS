@@ -1,7 +1,9 @@
 # ==============================================================================
 # 07_extract_all_coefficients.R — Unified Coefficient Table Extraction
-# Extracts coefficients from ALL fitted models (Frequentist + Bayesian)
-# and creates comprehensive comparison tables
+# Extracts coefficients from the frequentist mirror (glmmTMB twins of the two
+# Bayesian estimands, M1_total/M2_direct) and the Bayesian primary fits, and
+# creates comprehensive comparison tables with engine-aware uncertainty.
+# (Legacy 4-step ladder tables retired 2026-11-18 — audit item 2.)
 # ==============================================================================
 
 # Free memory
@@ -33,11 +35,11 @@ dir.create(here("output"), showWarnings = FALSE, recursive = TRUE)
 # ==============================================================================
 message("📥 Loading all fitted models...")
 
-# Frequentist models (glmmTMB)
-zinb_model1 <- readRDS(here("output", "zinb_model1.rds"))
-zinb_model2 <- readRDS(here("output", "zinb_model2.rds"))
-zinb_model3 <- readRDS(here("output", "zinb_model3.rds"))
-zinb_model4 <- readRDS(here("output", "zinb_model4.rds"))
+# Frequentist mirror models (glmmTMB twins of the Bayesian estimands;
+# the legacy zinb_model1-4 ladder is archived in
+# output/archive_freq_mirror_2026-11-18/)
+zinb_model_m1_total <- readRDS(here("output", "zinb_model_m1_total.rds"))
+zinb_model_m2_direct <- readRDS(here("output", "zinb_model_m2_direct.rds"))
 
 # Bayesian models (two-estimand structure, DV-201 validation 2026-11-13;
 # the pre-disposition single-model fit is archived in
@@ -91,10 +93,10 @@ tidy_bayes_coefs <- function(model, model_label) {
 message("📊 Extracting coefficients from all models...")
 
 # Frequentist models
-coef_m1 <- tidy_freq_coefs(zinb_model1, "M1: Baseline (Individual Controls)")
-coef_m2 <- tidy_freq_coefs(zinb_model2, "M2: + Minority Predictor")
-coef_m3 <- tidy_freq_coefs(zinb_model3, "M3: + MIPEX Main Effect")
-coef_m4 <- tidy_freq_coefs(zinb_model4, "M4: + MIPEX Interaction")
+coef_m1_total <- tidy_freq_coefs(zinb_model_m1_total,
+                                 "M1_total: minority x MIPEX, no LIBE (glmmTMB mirror)")
+coef_m2_direct <- tidy_freq_coefs(zinb_model_m2_direct,
+                                  "M2_direct: minority x MIPEX, + LIBE (glmmTMB mirror)")
 
 # Bayesian models (two-estimand structure, DV-201 validation 2026-11-13)
 coef_bayes_m1 <- tidy_bayes_coefs(bayesian_model_m1_total, "M1_total: Minority × MIPEX (no LIBE)")
@@ -107,7 +109,7 @@ coef_bayes <- bind_rows(coef_bayes_m1, coef_bayes_m2)
 message("📋 Creating comprehensive comparison table...")
 
 # Bind all frequentist results
-freq_results <- bind_rows(coef_m1, coef_m2, coef_m3, coef_m4)
+freq_results <- bind_rows(coef_m1_total, coef_m2_direct)
 
 # Add Bayesian results (with compatible columns)
 bayes_results_combined <- coef_bayes %>%
@@ -145,22 +147,18 @@ prepare_wide <- function(coef_df) {
     )
 }
 
-coef_m1_w <- prepare_wide(coef_m1) %>% rename_with(~paste0(., "_M1"), -term)
-coef_m2_w <- prepare_wide(coef_m2) %>% rename_with(~paste0(., "_M2"), -term)
-coef_m3_w <- prepare_wide(coef_m3) %>% rename_with(~paste0(., "_M3"), -term)
-coef_m4_w <- prepare_wide(coef_m4) %>% rename_with(~paste0(., "_M4"), -term)
+coef_m1_total_w <- prepare_wide(coef_m1_total) %>%
+  rename_with(~paste0(., "_M1_total"), -term)
+coef_m2_direct_w <- prepare_wide(coef_m2_direct) %>%
+  rename_with(~paste0(., "_M2_direct"), -term)
 
-wide_comparison <- coef_m1_w %>%
-  full_join(coef_m2_w, by = "term") %>%
-  full_join(coef_m3_w, by = "term") %>%
-  full_join(coef_m4_w, by = "term") %>%
+wide_comparison <- coef_m1_total_w %>%
+  full_join(coef_m2_direct_w, by = "term") %>%
   rename(Predictor = term) %>%
   select(
     Predictor,
-    estimate_M1, pval_star_M1, irr_M1 = irr_fmt_M1,
-    estimate_M2, pval_star_M2, irr_M2 = irr_fmt_M2,
-    estimate_M3, pval_star_M3, irr_M3 = irr_fmt_M3,
-    estimate_M4, pval_star_M4, irr_M4 = irr_fmt_M4
+    estimate_M1_total, pval_star_M1_total, irr_M1_total = irr_fmt_M1_total,
+    estimate_M2_direct, pval_star_M2_direct, irr_M2_direct = irr_fmt_M2_direct
   )
 
 write_csv(wide_comparison, here("output", "model_coefficients_wide_comparison.csv"))
@@ -200,10 +198,10 @@ message("✅ Bayesian table saved: output/bayesian_coefficients_comparison.csv")
 # 7. DISPLAY TABLES
 # ==============================================================================
 message("\n📊 === FREQUENTIST MODELS: WIDE FORMAT ===")
-print(kable(wide_comparison %>% select(Predictor, estimate_M1, estimate_M2, estimate_M3, estimate_M4),
+print(kable(wide_comparison %>% select(Predictor, estimate_M1_total, estimate_M2_direct),
             format = "markdown",
-            caption = "Coefficient Estimates Across 4 Frequentist ZINB Models",
-            align = c("l", rep("r", 4)),
+            caption = "Coefficient Estimates Across the 2 Frequentist Mirror Models",
+            align = c("l", "r", "r"),
             digits = 3))
 
 message("\n📊 === BAYESIAN MODELS: INTERACTION EFFECTS ===")
@@ -216,24 +214,37 @@ print(kable(bayes_interactions,
             align = c("l", "l", rep("r", 7)),
             digits = 4))
 
-message("\n📊 === KEY INTERACTION EFFECTS SUMMARY ===")
+message("\n📊 === KEY INTERACTION EFFECTS SUMMARY (ENGINE-AWARE) ===")
+# Audit fix (2026-11-18): the former interpretation labels relied on
+# 'p.value', which is NA for every Bayesian row (brms reports no p-values),
+# silently stamping all Bayesian interactions as 'Null'. Uncertainty is now
+# assessed per engine: Wald p-values for glmmTMB, 95% CrI coverage of 0 for
+# brms (conf.low/conf.high are on the log scale for both engines).
 interaction_summary <- all_coefficients %>%
   filter(str_detect(term, "minority.*:|minority.*\\*")) %>%
   select(model, term, estimate, exp_estimate, conf.low, conf.high, p.value) %>%
   mutate(
+    engine = if_else(str_detect(model, "glmmTMB"),
+                     "GLM (glmmTMB)", "Bayes (brms)"),
     interpretation = case_when(
-      estimate > 0 & p.value < 0.05 ~ "Positive & Significant",
-      estimate < 0 & p.value < 0.05 ~ "Negative & Significant",
-      estimate > 0 ~ "Positive (ns)",
-      estimate < 0 ~ "Negative (ns)",
-      TRUE ~ "Null"
+      engine == "GLM (glmmTMB)" & p.value < 0.05 & estimate > 0 ~
+        "Positive & Significant (Wald p < .05)",
+      engine == "GLM (glmmTMB)" & p.value < 0.05 & estimate < 0 ~
+        "Negative & Significant (Wald p < .05)",
+      engine == "GLM (glmmTMB)" ~
+        "Not Significant (Wald p >= .05)",
+      engine == "Bayes (brms)" & estimate > 0 & conf.low > 0 ~
+        "Positive (95% CrI excludes 0)",
+      engine == "Bayes (brms)" & estimate < 0 & conf.high < 0 ~
+        "Negative (95% CrI excludes 0)",
+      TRUE ~ "Not credible (95% CrI includes 0)"
     )
   )
 
 print(kable(interaction_summary,
             format = "markdown",
-            caption = "Interaction Effects: Minority Status × Context",
-            align = c("l", "l", "r", "r", "r", "r", "r", "l"),
+            caption = "Interaction Effects: Minority Status × Context (engine-aware)",
+            align = c("l", "l", "r", "r", "r", "r", "r", "l", "l"),
             digits = 4))
 
 # ==============================================================================

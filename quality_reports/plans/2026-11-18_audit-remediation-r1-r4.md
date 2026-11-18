@@ -1,0 +1,11 @@
+# Plan — Audit Remediation R1 → R2 → R3 → R4
+
+**Date:** 2026-11-18 · **Scope:** remaining open items from `2026-11-18_pipeline-scripts-audit.md` (§9 items 5, 6, 7, 8 + SKW cache hazard). Item 1 (ms variant integration) deferred by FR; items 1-pipeline, 2, 3, 4 already closed. No git commit (FR decision parked).
+
+- [x] **R1 — repro hardening**: `seed = 20260321` at 10 `brm()` sites (05B:s113,149; SENS:s358,376; SLLM:s250,265; R2:s264,279; SKW:s75,93) + `set.seed(20260321)` at top of 06B (and 06, cosmetic) + SKW cache decouple (`output/cache_skw_keyword/` md5-verified copies; repoint `file=` at SKW:89,107; archive stays immutable). Verify: `parse()`, grep seeds, md5 archive≡cache. No pipeline run.
+- [x] **R2 — hygiene**: fix stale "IDENTICAL … 2,000 iters" header claims (LIBE:290-295, TERM:212-217, CMP:395-400); delete `scripts/main.R`, `scripts/test_system2.R`, root `test.R`, `Rplots.pdf`, `PROJECT_INDEX.md:Zone.Identifier`; archive `scripts/#07_Exploratory analysis.r` → `scripts/archive/`; `.gitignore` += `Rplots.pdf`, `*:Zone.Identifier`; drop dead code (01:25-28 chain, 02:13-17 `check_na`); `08` window-constants cross-note (screen ⊃ derivation ⊃ aggregation; 2019-07-01 three-way). Documentation-only for windows.
+- [x] **R3 — 04 cache + provenance**: `04:32` `FORCE_REDOWNLOAD` ← env-var override (`EP_COVARIATES_FORCE=1`) + header comment; md5-guarded validation run of `04` vs `output/problem_indicators.csv` snapshot; `# TODO(FR): source + as-of` stubs in `04:89-99` (UK GDP) and `03`'s four hardcoded blocks (country_features/~55-76, euro_entry_year/~95-115, populist_in_gov/~120-140, eu_budget_status/~140-245).
+- [x] **R4 — renv**: `renv::init(bare=TRUE)` + `renv::snapshot()` (pin versions, no library install); CRAN repos option in `run_pipeline.R`; `renv::status()` validation; env-pinning memo.
+- [x] **Docs per batch**: TO_DO status entry + audit §11 addendum closure notes; final session log `quality_reports/session_logs/2026-11-18_audit-remediation-r1-r4.md`; env-pinning memo `quality_reports/2026-11-18_env-pinning-renv.md`.
+
+**Invariants:** no refits (cache semantics untouched), no commits, unrelated working-tree changes untouched, `output/problem_indicators.csv` md5-must-identical after the R3 validation run.

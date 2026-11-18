@@ -1,3 +1,9 @@
+# ==============================================================================
+# ARCHIVED 2026-11-18 (audit item 8 hygiene): legacy exploratory scratch from
+# the project-import era (Italian working notes, free-floating objects like
+# df_merged_3). Superseded by the numbered pipeline and explorations/ scripts;
+# kept for provenance only — DO NOT source or run this file.
+# ==============================================================================
 #07_Exploratory analysis
 
 library(dplyr)

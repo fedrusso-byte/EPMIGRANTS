@@ -369,6 +369,7 @@ bayesian_model_m1_sens <- brm(
   warmup = 1500,
   cores = 4,
   control = list(adapt_delta = 0.95),
+  seed = 20260321,
   file = here("output", "bayesian_model_m1_sens")
 )
 
@@ -387,6 +388,7 @@ bayesian_model_m2_sens <- brm(
   warmup = 1500,
   cores = 4,
   control = list(adapt_delta = 0.95),
+  seed = 20260321,
   file = here("output", "bayesian_model_m2_sens")
 )
 

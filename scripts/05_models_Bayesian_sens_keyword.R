@@ -4,14 +4,20 @@
 # Reference fits for the demoted keyword-based operationalization, retained
 # after the DV-definition promotion of 2026-11-17 (the LLM-refined R2 measure
 # became the PRIMARY DV; see scripts/05_models.R § 1b and
-# scripts/05_models_Bayesian.R). Input = the pre-promotion keyword panel and
-# its two-estimand fits, archived with an md5 manifest in
-# output/archive_spec_promotion_2026-11-17/: the panel has 10,955 MEP-year
-# rows and 1,244 in-sample DV events. Because formula/data are identical to
-# the archived fits, `brm(file = ...)` restores the cached posteriors (no
-# refit); on a fresh workspace the same code refits the keyword
-# specification from scratch. Outputs: output/bayesian_senskw_model_results.csv
-# (M1_keyword / M2_keyword). No primary namespace is touched.
+# scripts/05_models_Bayesian.R). Input = the pre-promotion keyword panel,
+# archived with an md5 manifest in output/archive_spec_promotion_2026-11-17/
+# (panel: 10,955 MEP-year rows, 1,244 in-sample DV events; MANIFEST.md md5s:
+# m1 7b0af060487ea09be2389758c1fd9439, m2 aaebad9a9fedf8e452cf2fd7f0fcb51e).
+# The fit caches are drawn from the WRITABLE SCRATCH CACHE
+# output/cache_skw_keyword/ (md5-verified copies of the archived fit caches,
+# added 2026-11-18 to decouple archive-as-cache: brm(file=) must never use
+# the archive directory, since with a modified spec a later run could refit
+# and overwrite the archived fits that Appendix B relies on). Because
+# formula/data are identical to the archived fits, `brm(file = ...)` restores
+# the cached posteriors (no refit); on a fresh workspace the same code refits
+# the keyword specification from scratch. Outputs:
+# output/bayesian_senskw_model_results.csv (M1_keyword / M2_keyword).
+# No primary namespace is touched.
 # Manuscript mapping: Appendix B Table B1 quotes M1/M2 on the keyword DV;
 # the robustness text cites the minority and LIBE estimates from these fits.
 # ==============================================================================
@@ -35,6 +41,14 @@ archive_dir <- here("output", "archive_spec_promotion_2026-11-17")
 stopifnot(
   "keyword archive directory must exist (output/archive_spec_promotion_2026-11-17)" =
     dir.exists(archive_dir)
+)
+# Scratch cache for the brm(file=) fit caches (2026-11-18, archive-as-cache
+# decoupling): md5-verified copies of the archived fits live here; the
+# archive itself stays immutable.
+cache_dir <- here("output", "cache_skw_keyword")
+stopifnot(
+  "scratch cache directory must exist (output/cache_skw_keyword)" =
+    dir.exists(cache_dir)
 )
 
 # ==============================================================================
@@ -86,7 +100,8 @@ bayesian_model_m1_total_kw <- brm(
   warmup = 1500,
   cores = 4,
   control = list(adapt_delta = 0.95),
-  file = here(archive_dir, "bayesian_model_m1_total")
+  seed = 20260321,
+  file = here(cache_dir, "bayesian_model_m1_total")
 )
 
 message("   Fitting/restoring keyword M2_direct (+ LIBE committee control)...")
@@ -104,7 +119,8 @@ bayesian_model_m2_direct_kw <- brm(
   warmup = 1500,
   cores = 4,
   control = list(adapt_delta = 0.95),
-  file = here(archive_dir, "bayesian_model_m2_direct")
+  seed = 20260321,
+  file = here(cache_dir, "bayesian_model_m2_direct")
 )
 
 # ==============================================================================

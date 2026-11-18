@@ -1,4 +1,13 @@
 # ==============================================================================
+# [ARCHIVED KEYWORD-DV VINTAGE — 2026-11-12 era]
+# The entire libe_robustness exploration ran on the keyword-based DV vintage
+# retired by the 2026-11-17 refined-DV promotion. Its outputs were archived to
+# output/archive_keyword_dv_2026-11-18/libe_robustness/ (md5 manifest) on
+# 2026-11-18 (audit sweep, item-2 closure). Do not re-run without porting the
+# promoted refined DV first — see quality_reports/2026-11-18_frequentist-mirror-robustness.md.
+# ==============================================================================
+
+# ==============================================================================
 # explorations/libe_robustness/libe_robustness.R
 # LIBE-OMISSION ROBUSTNESS: DIRECT vs TOTAL EFFECT OF MINORITY BACKGROUND
 # ------------------------------------------------------------------------------

@@ -31,16 +31,28 @@
 #     globally on df_merged_3 before filtering: this shifts only the minority
 #     baseline, never the interaction, which is invariant to the centering
 #     constant.
-#   - Sample facts (verified pre-flight 2026-11-12, exact assertions below):
-#     N = 9,850; 23 countries; 1,543 MEPs; 51 minority MEPs / 301 MEP-years;
-#     DV sum = 1,038 (7.3% positive); terms 3,445 / 3,444 / 2,961.
+#   - Sample facts (recomputed 2026-11-18 on the 2026-11-13 panel build,
+#     exact assertions below): N = 9,850; 23 countries; 1,543 MEPs;
+#     52 minority MEPs / 306 MEP-years (+1 MEP / +5 MEP-years vs the
+#     2026-11-12 pre-flight: minority.csv update of 2026-11-13, MEP 28125,
+#     SE, VII term); refined LLM DV sum = 599 (4.2% of MEP-years positive;
+#     keyword vintage on this same sample: 1,063 events, 7.5%); terms
+#     3,445 / 3,444 / 2,961 rows.
 #     13 of the 23 countries have ZERO minority MEPs (AT CY CZ DK EE GR HR IE
 #     LT LV PL PT SI); minority MEP-years concentrate in 10 countries, led by
-#     FR (122), UK (58), DE (36), SE (25), NL (20) — the interaction is
+#     FR (122), UK (58), DE (36), SE (30), NL (20) — the interaction is
 #     identified from between-country contrasts among these minority-hosting
 #     countries, whose CMP values sit at the HIGH end of the sample range
 #     (minority rows: median cmp_mean 13.03 vs 7.83 for non-minority). This
 #     exposure imbalance is a mandatory caveat in the results memo.
+#   - DV PROMOTION (decision FR, 2026-11-18 — Option A; audit remediation
+#     item 1): the keyword DV shipped in df_merged_3.csv is replaced IN
+#     MEMORY by the refined LLM (R2) DV promoted to the primary
+#     specification (05_models.R §1b, 2026-11-17) via the overlay in §1b
+#     below; the former keyword counts are kept as
+#     pqs_discrimination_keyword for vintage cross-checks. The
+#     keyword-vintage fit of this model is archived in
+#     output/archive_keyword_dv_2026-11-18/.
 #   - All outputs use DISTINCT names (df_model_data_cmp.rds,
 #     bayesian_model_cmp.rds, bayesian_model_cmp_libeonly.rds,
 #     bayesian_cmp_*.csv): nothing in output/ is overwritten. NOT wired into
@@ -91,6 +103,127 @@ stopifnot(
     "legislative_term"
   ) %in% names(df_merged_3))
 )
+
+# ------------------------------------------------------------------------------
+# §1b. DV PROMOTION OVERLAY (2026-11-18, FR decision "Option A" — audit
+# remediation item 1): df_merged_3.csv still ships the KEYWORD DV counts (the
+# 2026-11-13 aggregate artifact), but the primary specification was promoted
+# to the refined LLM (R2) DV on 2026-11-17 (05_models.R §1b). To stay on the
+# primary estimand, this script reconstructs the refined DV exactly as the
+# primary script does — question counts re-aggregated from the epq table over
+# the promoted kept-DV id lists — and swaps it in in memory:
+#   pqs_discrimination         <- refined LLM (R2) counts (PRIMARY estimand)
+#   pqs_discrimination_keyword <- former keyword counts (vintage cross-check)
+# The overlay changes DV values only (rows/columns untouched); the
+# total_questions equality assert below proves the aggregation row-coverage
+# is identical to the primary panel.
+# ------------------------------------------------------------------------------
+refined_keptdv <- read_csv(here("data", "dv201_llm_refined_keptdv_ids.csv"),
+                           show_col_types = FALSE)
+verified_in <- read_csv(here("data", "dv201_llm_verified_in_ids.csv"),
+                        show_col_types = FALSE)
+stopifnot(
+  "refined retained-DV list must have exactly 529 rows" =
+    nrow(refined_keptdv) == 529,
+  "verified-IN list must have exactly 255 rows" = nrow(verified_in) == 255
+)
+refined_ids <- refined_keptdv$id
+verified_ids <- verified_in$id
+epq <- readRDS(here("data_processed", "epq.rds"))
+stopifnot(
+  "all 529 refined ids must exist in epq.rds" = all(refined_ids %in% epq$id),
+  "all 255 verified-IN ids must exist in epq.rds" = all(verified_ids %in% epq$id),
+  "retained-DV and verified-IN lists must not overlap" =
+    !any(refined_ids %in% verified_ids),
+  "id lists must be unique" = !any(duplicated(c(refined_ids, verified_ids)))
+)
+dv_r2_ids <- c(refined_ids, verified_ids)
+iv_r <- match(refined_ids, epq$id)
+iv_v <- match(verified_ids, epq$id)
+stopifnot(
+  "primary DV flag must be binary" =
+    all(epq$pq_discrimination %in% c(0L, 1L)),
+  "all 529 refined retained-DV ids must be DV=1 in the primary import" =
+    all(epq$pq_discrimination[iv_r] == 1L),
+  "none of the 255 verified-INs may already be DV=1 in the primary import" =
+    all(epq$pq_discrimination[iv_v] == 0L),
+  "all 529 refined ids must be in-window (VII..IX)" =
+    all(as.Date(epq$date)[iv_r] >= as.Date("2009-07-14") &
+          as.Date(epq$date)[iv_r] <= as.Date("2024-07-15") &
+          !is.na(epq$date)[iv_r]),
+  "all 255 verified-IN ids must be in-window (VII..IX)" =
+    all(as.Date(epq$date)[iv_v] >= as.Date("2009-07-14") &
+          as.Date(epq$date)[iv_v] <= as.Date("2024-07-15") &
+          !is.na(epq$date)[iv_v])
+)
+assign_term_sensllmr2 <- function(date_col) {
+  case_when(
+    date_col >= lubridate::ymd("2004-07-20") & date_col <= lubridate::ymd("2009-07-13") ~ "6th",
+    date_col >= lubridate::ymd("2009-07-14") & date_col <= lubridate::ymd("2014-06-30") ~ "7th",
+    date_col >= lubridate::ymd("2014-07-01") & date_col <= lubridate::ymd("2019-07-01") ~ "8th",
+    date_col >= lubridate::ymd("2019-07-02") & date_col <= lubridate::ymd("2024-07-15") ~ "9th",
+    TRUE ~ NA_character_
+  )
+}
+d_win <- epq %>%
+  filter(!is.na(date), as.Date(date) >= as.Date("2009-07-14"),
+         as.Date(date) <= as.Date("2024-07-15")) %>%
+  mutate(term_ch = assign_term_sensllmr2(as.Date(date)))
+stopifnot("primary keyword in-window DV events must be 1,319" =
+            sum(d_win$pq_discrimination) == 1319)
+epq <- epq %>% mutate(pq_r2 = as.integer(id %in% dv_r2_ids))
+d_win2 <- epq %>%
+  filter(!is.na(date), as.Date(date) >= as.Date("2009-07-14"),
+         as.Date(date) <= as.Date("2024-07-15")) %>%
+  mutate(term_ch = assign_term_sensllmr2(as.Date(date)))
+stopifnot(
+  "refined in-window DV events must be 784 (529 retained + 255 verified)" =
+    sum(d_win2$pq_r2) == 784,
+  "the replacement must drop 535 primary DV events in-window" =
+    sum(d_win2$pq_r2) - sum(d_win$pq_discrimination) == -535
+)
+legislature_starts <- tibble(
+  legislative_term = c("6th", "7th", "8th", "9th"),
+  term_start = lubridate::ymd(c("2004-07-20", "2009-07-14", "2014-07-01", "2019-07-02")),
+  term_end = lubridate::ymd(c("2009-07-13", "2014-06-30", "2019-07-01", "2024-07-15"))
+)
+questions_r2 <- epq %>%
+  mutate(dates = as.Date(date)) %>%
+  filter(dates >= as.Date("2004-07-20"), dates <= as.Date("2024-06-08")) %>%
+  mutate(legislative_term = assign_term_sensllmr2(dates)) %>%
+  left_join(legislature_starts, by = "legislative_term") %>%
+  mutate(year_index = (lubridate::interval(term_start, dates) %/% lubridate::years(1)) + 1) %>%
+  mutate(leg_year = paste0(legislative_term, year_index)) %>%
+  filter(year_index <= 5) %>%
+  group_by(mep_id, leg_year) %>%
+  summarise(
+    pqs_discrimination_r2 = sum(pq_r2 == 1L, na.rm = TRUE),
+    total_questions_r2 = n(),
+    .groups = "drop"
+  )
+stopifnot("questions_r2 must not be empty" = nrow(questions_r2) > 0)
+df_merged_3 <- df_merged_3 %>%
+  left_join(questions_r2, by = c("mep_id", "leg_year")) %>%
+  mutate(
+    pqs_discrimination_r2 = replace_na(pqs_discrimination_r2, 0L),
+    total_questions_r2 = replace_na(total_questions_r2, 0L),
+    total_questions = replace_na(total_questions, 0L)
+  )
+stopifnot(
+  "total_questions must be identical between primary and R2 aggregation" =
+    all(df_merged_3$total_questions_r2 == df_merged_3$total_questions)
+)
+df_merged_3 <- df_merged_3 %>%
+  rename(
+    pqs_discrimination_keyword = pqs_discrimination,
+    pqs_discrimination = pqs_discrimination_r2
+  ) %>%
+  select(-total_questions_r2)
+message("   [DV promotion] Panel DVs: pqs_discrimination = refined R2 (primary); ",
+        "pqs_discrimination_keyword = former keyword counts (vintage).")
+rm(epq, refined_keptdv, verified_in, refined_ids, verified_ids, dv_r2_ids,
+   iv_r, iv_v, d_win, d_win2, questions_r2, legislature_starts,
+   assign_term_sensllmr2)
 
 # Term filter and the UK x 9th-term exclusion safeguard (verified no-op on
 # today's data: the upstream data contain no UK rows in the 9th term).
@@ -151,12 +284,14 @@ stopifnot(
     abs(cmp_sd_sample - 4.0073) < 0.0005,
   "MEPs must match verification (1,543)" =
     dplyr::n_distinct(df_cmp_model$mep_id) == 1543,
-  "Minority MEPs must match verification (51)" =
-    dplyr::n_distinct(df_cmp_model$mep_id[df_cmp_model$minority == 1]) == 51,
-  "Minority MEP-years must match verification (301)" =
-    sum(df_cmp_model$minority == 1) == 301,
-  "DV events must match verification (1,038)" =
-    sum(df_cmp_model$pqs_discrimination) == 1038,
+  "Minority MEPs must match the recomputed sample (52; +1 vs the 2026-11-12 pre-flight — minority.csv update of 2026-11-13, MEP 28125, SE)" =
+    dplyr::n_distinct(df_cmp_model$mep_id[df_cmp_model$minority == 1]) == 52,
+  "Minority MEP-years must match the recomputed sample (306; +5 from MEP 28125)" =
+    sum(df_cmp_model$minority == 1) == 306,
+  "Refined DV events must match the promotion recomputation (599)" =
+    sum(df_cmp_model$pqs_discrimination) == 599,
+  "Keyword-DV vintage cross-check must match on this sample (1,063; +25 DV-201 force-keep events vs the 2026-11-12 fit's 1,038)" =
+    sum(df_cmp_model$pqs_discrimination_keyword) == 1063,
   "UK rows in the 9th term must be absent (safeguard rule)" =
     all(!(df_cmp_model$country == "UK" & df_cmp_model$legislative_term == "9th"))
 )
@@ -201,9 +336,10 @@ message("Sample saved to: output/df_model_data_cmp.rds")
 # ==============================================================================
 # Cheap frequentist smoke tests verify that BOTH formulas are fittable on this
 # exact sample before any brms time is spent. Reference anchors: the archived
-# (discarded) CMP fit — (1 | country) only, global centering — returned a
-# minority:cmp_center interaction of 0.107 [-0.038, 0.275] (null); the
-# glmmTMB pre-flight on 2026-11-12 (nbinom2 + ziformula = ~1, same REs) gave
+# (discarded) keyword-vintage CMP fit — (1 | country) only, global centering —
+# returned a minority:cmp_center interaction of 0.107 [-0.038, 0.275] (null);
+# the glmmTMB pre-flight on 2026-11-12 (keyword-DV vintage of 2026-11-12;
+# nbinom2 + ziformula = ~1, same REs) gave
 # 0.085 (SE 0.100) for M1 and 0.948 (SE 0.250) for the minority main effect
 # in M2. NOTE: glmmTMB 1.1.14 does not export ziNegBin() as a function call
 # (first launch 2026-11-12 failed on exactly that); family = nbinom2 with
@@ -256,12 +392,19 @@ smoke_report(smoke_m2, "M2 smoke", "minority")
 # ==============================================================================
 # 3. PRIORS AND MODEL M1: minority x cmp CENTER INTERACTION
 # ==============================================================================
-# Priors and sampling settings are IDENTICAL to 05_models_Bayesian.R and
-# 05_models_Bayesian_LIBE.R so all fits are directly comparable:
-#   - student_t(3, 0, 2.5) on all population-level coefficients (class "b")
-#     and on the zero-inflation intercept (class "zi");
-#   - brms default weakly-informative prior on the random-effect SDs;
-#   - 4 chains x 2,000 iterations (1,000 warmup), adapt_delta = 0.95.
+# Priors and sampling settings replicate the primary specification AS OF
+# CREATION (pre-promotion, keyword-DV vintage): student_t(3, 0, 2.5) on all
+# population-level coefficients (class "b") and on the zero-inflation
+# intercept (class "zi"); brms default weakly-informative prior on the
+# random-effect SDs; 4 chains x 2,000 iterations (1,000 warmup),
+# adapt_delta = 0.95.
+# NOTE (audit fix 2026-11-18): the earlier "IDENTICAL to 05_models_Bayesian.R
+# and 05_models_Bayesian_LIBE.R" claim is no longer true — the primary moved
+# to 4 chains x 4,000 iterations (1,500 warmup) at the 2026-11-17 promotion,
+# and this variant was NOT re-aligned (both CMP fit blocks run 2,000/1,000).
+# Comparability holds at the level of model structure and priors; the variant
+# was refitted on the refined DV (remediation 1, 2026-11-18 'Option A') under
+# these settings; no further rerun is planned.
 priors_common <- c(
   set_prior("student_t(3, 0, 2.5)", class = "b"),
   set_prior("student_t(3, 0, 2.5)", class = "zi")
@@ -610,8 +753,10 @@ print(knitr::kable(
 # the minority / moderator / interaction terms across M1, M2 and, when
 # present, the primary MIPEX-only model's CSV. Nested-model anchors for the
 # memo: (a) compare b_minority across M1 and M2; (b) compare the M1 interaction
-# with the archived CMP fit (0.107 [-0.038, 0.275], (1|country) only) and with
-# the primary MIPEX interaction (0.011 [-0.033, 0.058]).
+# with the archived (discarded) CMP fit (0.107 [-0.038, 0.275], (1|country)
+# only) and with the primary MIPEX interaction in
+# output/bayesian_model_results.csv (refined-DV vintage). The keyword-vintage
+# M1/M2 columns live in output/archive_keyword_dv_2026-11-18/.
 key_terms <- c("minority", "libe", "cmp_center", "minority:cmp_center",
                "minority:libe", "mipex_center", "minority:mipex_center")
 comparison_cmp <- bind_rows(final_results_cmp, final_results2)

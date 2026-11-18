@@ -21,12 +21,6 @@ df <- df %>%
   rename(subtopic = most_frequent_subtopic,
          id = idOrig)
 
-# Check duplicates in df2
-df %>%
-  count(id) %>%
-  filter(n > 1)
-# 22 duplicates. Let's remove them
-
 # remove duplicates keeping the first one of each
 df <- df %>%
   distinct(id, .keep_all = TRUE)  # safeguard: keep one row per idOrig

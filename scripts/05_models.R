@@ -1,7 +1,15 @@
 # ==============================================================================
-# # 05_models.R — Zero-Inflated NB GLMM + Marginal Effects (MIPEX-only)
-# Fits multilevel ZINB model, computes variance decomposition,
-# coefficient tables, effect plots, and marginal predictions.
+# # 05_models.R — Frequentist mirror of the Bayesian primary estimands (MIPEX-only)
+# Fits the two glmmTMB twins of the promoted Bayesian primary (refined LLM DV):
+#   M1_total (no LIBE control) and M2_direct (LIBE included as regressor),
+# plus the shared MIPEX-only estimation sample (output/df_model_data.rds),
+# the performance/LR comparison and the two-estimand coefficient table.
+# History: the former 4-step specification ladder (zinb_model1-4) was retired
+# on 2026-11-18 (audit finding 2) — only ladder M4 coincided with M2_direct
+# and M1-M3 matched no manuscript estimand; the ladder fits + comparison
+# table + both stale figures live in output/archive_freq_mirror_2026-11-18/
+# (md5 manifest). The legacy country-FE variant is quarantined in
+# scripts/archive/.
 # ==============================================================================
 
 # free memory
@@ -327,82 +335,104 @@ rm(epq, refined_keptdv, verified_in, refined_ids, verified_ids, dv_r2_ids,
 
 
 # ==============================================================================
-# 3. STIMA DEI MODELLI (Risoluzione globale problemi Hessiano / NaN) ####
+# 3. STIMA DEI MODELLI — FREQUENTIST MIRROR OF THE BAYESIAN PRIMARY ####
 # ==============================================================================
+# Remediation of audit finding 2 (FR directive 2026-11-18): the frequentist
+# engine is a robustness check on the ESTIMATION PARADIGM, so it re-fits
+# exactly the two Bayesian primary estimands (05_models_Bayesian.R, promoted
+# refined DV) by maximum likelihood via glmmTMB:
+#   M1_total  ~ gender + misery_index + party_family + minority * mipex_center
+#               + offset(log(total_questions + 1)) + (1 | mep_id) + (1 | country)
+#   M2_direct ~ M1_total + libe
+# family nbinom2 with intercept-only zero inflation
+# (brms zero_inflated_negbinomial twin). Spec-parity, finite-SE and drift
+# gates below halt the pipeline on any mismatch. The retired 4-step ladder
+# lives in output/archive_freq_mirror_2026-11-18/ (md5 manifest).
 
-# Definiamo un blocco di controllo robusto comune a tutti i modelli
+# Definiamo un blocco di controllo robusto comune ai due modelli
 controllo_ottimizzatore <- glmmTMBControl(
   optimizer = nlminb,
   optArgs = list(iter.max = 3000, eval.max = 3000)
 )
 
-# Modello 1
-message("   Fitting zinb_model1...")
-zinb_model1 <- glmmTMB(
-   pqs_discrimination ~ 
-       gender + misery_index + party_family + libe + 
-       offset(log(total_questions + 1)) + 
-       (1 | mep_id) + (1 | country),   
-   family = nbinom2,
-   ziformula = ~ 1,            
-   data = df_model_data,
-   control = controllo_ottimizzatore
-)
-saveRDS(zinb_model1, here("output", "zinb_model1.rds"))
-
-# Modello 2
-message("   Fitting zinb_model2...")
-zinb_model2 <- glmmTMB(
-   pqs_discrimination ~ 
-       gender + misery_index + party_family + libe + 
-       minority +
-       offset(log(total_questions + 1)) + 
-       (1 | mep_id) + (1 | country),   
-   family = nbinom2,
-   ziformula = ~ 1,            
-   data = df_model_data,
-   control = controllo_ottimizzatore
-)
-saveRDS(zinb_model2, here("output", "zinb_model2.rds"))
-
-# Modello 3
-message("   Fitting zinb_model3 (with MIPEX)...")
-zinb_model3 <- glmmTMB(
-   pqs_discrimination ~ 
-       gender + misery_index + party_family + libe + minority + 
-       mipex_center + 
-       offset(log(total_questions + 1)) + 
-       (1 | mep_id) + (1 | country),   
-   family = nbinom2,
-   ziformula = ~ 1,            
-   data = df_model_data,
-   control = controllo_ottimizzatore
-)
-saveRDS(zinb_model3, here("output", "zinb_model3.rds"))
-
-# Modello 4
-message("   Stima del Modello 4...")
-zinb_model4 <- glmmTMB(
-  pqs_discrimination ~ 
-    gender + misery_index + party_family + libe + 
-    minority * mipex_center + 
-    offset(log(total_questions + 1)) + 
+# --- Analogo frequentista di M1_total Bayesian (senza il regressore LIBE) -----
+message("   Fitting zinb_model_m1_total (mirror of Bayesian M1_total)...")
+zinb_model_m1_total <- glmmTMB(
+  pqs_discrimination ~
+    gender + misery_index + party_family +
+    minority * mipex_center +
+    offset(log(total_questions + 1)) +
     (1 | mep_id) + (1 | country),
   family = nbinom2,
-  ziformula = ~ 1,           
+  ziformula = ~ 1,
   data = df_model_data,
   control = controllo_ottimizzatore
 )
-saveRDS(zinb_model4, here("output", "zinb_model4.rds"))
+saveRDS(zinb_model_m1_total, here("output", "zinb_model_m1_total.rds"))
+
+# --- Analogo frequentista di M2_direct Bayesian (aggiunge LIBE) --------------
+message("   Fitting zinb_model_m2_direct (mirror of Bayesian M2_direct)...")
+zinb_model_m2_direct <- glmmTMB(
+  pqs_discrimination ~
+    gender + misery_index + party_family + libe +
+    minority * mipex_center +
+    offset(log(total_questions + 1)) +
+    (1 | mep_id) + (1 | country),
+  family = nbinom2,
+  ziformula = ~ 1,
+  data = df_model_data,
+  control = controllo_ottimizzatore
+)
+saveRDS(zinb_model_m2_direct, here("output", "zinb_model_m2_direct.rds"))
+
+# --- Spec-parity and convergence gates (halt the pipeline on any failure) ----
+stopifnot(
+  "M1_total must carry the minority x mipex_center interaction" =
+    "minority:mipex_center" %in% names(fixef(zinb_model_m1_total)$cond),
+  "M1_total must NOT carry libe (total-effect estimand)" =
+    !"libe" %in% names(fixef(zinb_model_m1_total)$cond),
+  "M2_direct must carry libe (direct-effect estimand)" =
+    "libe" %in% names(fixef(zinb_model_m2_direct)$cond),
+  "M1_total must be nested in M2_direct (identical terms + libe)" =
+    setequal(names(fixef(zinb_model_m1_total)$cond),
+             setdiff(names(fixef(zinb_model_m2_direct)$cond), "libe")),
+  "M1_total conditional fixed-effect SEs must all be finite" =
+    all(is.finite(sqrt(diag(vcov(zinb_model_m1_total)$cond)))),
+  "M2_direct conditional fixed-effect SEs must all be finite" =
+    all(is.finite(sqrt(diag(vcov(zinb_model_m2_direct)$cond))))
+)
+message("   [mirror] Spec-parity + finite-SE gates passed on both fits.")
+
+# --- Drift gate vs the archived ladder M4 (pre-existing M2_direct twin) -------
+# zinb_model4 (archived before the rebuild, 2026-11-18) was fit under exactly
+# the M2_direct formula on the same promoted panel: the refreshed fit must
+# reproduce its estimates to numerical precision. Halts on silent
+# specification or sample drift.
+arch_m4 <- readRDS(here("output", "archive_freq_mirror_2026-11-18", "zinb_model4.rds"))
+fe_new <- fixef(zinb_model_m2_direct)
+fe_old <- fixef(arch_m4)
+stopifnot(
+  "new M2_direct terms must match the archived ladder M4 terms" =
+    setequal(names(fe_new$cond), names(fe_old$cond)),
+  "new M2_direct must reproduce the archived ladder M4 fixed effects" =
+    isTRUE(all.equal(unname(fe_new$cond), unname(fe_old$cond), tolerance = 1e-6)),
+  "new M2_direct must reproduce the archived ladder M4 zero-inflation intercept" =
+    isTRUE(all.equal(unname(fe_new$zi), unname(fe_old$zi), tolerance = 1e-6))
+)
+message(sprintf(
+  "   [mirror] Drift gate vs archived ladder M4 passed (max |dcoef| = %.2e).",
+  max(abs(fe_new$cond - fe_old$cond))
+))
+rm(arch_m4, fe_new, fe_old)
 
 
 # ==============================================================================
-# 4. CONFRONTO PERFORMANCE E ANOVA (VERSIONE BLINDATA) ####
+# 4. CONFRONTO PERFORMANCE E TEST LR SU LIBE (M1_total vs M2_direct) ####
 # ==============================================================================
-message("   Generazione tabelle di confronto delle performance...")
+message("   Generazione tabelle di confronto delle performance (2 estimands)...")
 
 model_comparison <- performance::compare_performance(
-  zinb_model1, zinb_model2, zinb_model3, zinb_model4, 
+  zinb_model_m1_total, zinb_model_m2_direct,
   metrics = c("RMSE", "AIC", "BIC")
 )
 
@@ -410,10 +440,8 @@ essential_comparison <- model_comparison %>%
   as_tibble() %>%
   mutate(
     Model_Label = case_when(
-      Name == "zinb_model1" ~ "M1: Baseline Individual Controls",
-      Name == "zinb_model2" ~ "M2: Adding Minority Predictor",
-      Name == "zinb_model3" ~ "M3: Adding MIPEX Main Effect",
-      Name == "zinb_model4" ~ "M4: MIPEX + Minority*MIPEX Interaction",
+      Name == "zinb_model_m1_total"  ~ "M1_total: minority x MIPEX (no LIBE)",
+      Name == "zinb_model_m2_direct" ~ "M2_direct: minority x MIPEX (+ LIBE)",
       TRUE ~ Name
     ),
     RMSE = round(RMSE, 3),
@@ -426,27 +454,26 @@ essential_comparison <- model_comparison %>%
 print("--- Tabella Comparativa delle Performance ---")
 print(essential_comparison)
 
-anova_results <- anova(zinb_model1, zinb_model2, zinb_model3, zinb_model4, test = "Chisq")
-print("--- Test ANOVA Completo (Tutti i Modelli) ---")
+# LR test on the only difference between the two estimands: the LIBE coefficient
+anova_results <- anova(zinb_model_m1_total, zinb_model_m2_direct, test = "Chisq")
+print("--- Likelihood-ratio test: aggiunta di libe (M1_total -> M2_direct) ---")
 print(anova_results)
 
 # ==============================================================================
-# 6. ESTRAZIONE COEFFICIENTI E COSTRUZIONE TABELLA UNIFICATA (CORRETTO) ####
+# 6. ESTRAZIONE COEFFICIENTI (DUE ESTIMANDS, TABELLA MIRROR) ####
 # ==============================================================================
-message("   Estrazione e formattazione dei coefficienti per i 4 modelli...")
+message("   Estrazione e formattazione dei coefficienti per i 2 estimands...")
 
-coef_m1 <- tidy_exp_coefs(zinb_model1) %>% rename_with(~paste0(., "_M1"), -term)
-coef_m2 <- tidy_exp_coefs(zinb_model2) %>% rename_with(~paste0(., "_M2"), -term)
-coef_m3 <- tidy_exp_coefs(zinb_model3) %>% rename_with(~paste0(., "_M3"), -term)
-coef_m4 <- tidy_exp_coefs(zinb_model4) %>% rename_with(~paste0(., "_M4"), -term)
+coef_m1_total <- tidy_exp_coefs(zinb_model_m1_total) %>%
+  rename_with(~paste0(., "_M1_total"), -term)
+coef_m2_direct <- tidy_exp_coefs(zinb_model_m2_direct) %>%
+  rename_with(~paste0(., "_M2_direct"), -term)
 
-tabella_coefficienti <- coef_m1 %>%
-  full_join(coef_m2, by = "term") %>%
-  full_join(coef_m3, by = "term") %>%
-  full_join(coef_m4, by = "term") %>%
+tabella_coefficienti <- coef_m1_total %>%
+  full_join(coef_m2_direct, by = "term") %>%
   rename(Predictor = term)
 
-print("--- Anteprima dei Coefficienti Unificati (Componente Condizionale) ---")
+print("--- Anteprima dei Coefficienti (Componente Condizionale) ---")
 print(head(tabella_coefficienti, 10))
 
 write_csv(tabella_coefficienti, here("output", "model_coefficients_comparison.csv"))
@@ -457,11 +484,19 @@ message("🎉 Tabella dei coefficienti salvata in: output/model_coefficients_com
 # ------------------------------------------------------------------------------
 tabella_compatta <- tabella_coefficienti %>%
   mutate(
-    `M1 (Baseline)`   = if_else(!is.na(estimate_M1), paste0(estimate_M1, " (IRR: ", exp_estimate_M1, ") ", pval_str_M1), "-"),
-    `M2 (+ Minority)` = if_else(!is.na(estimate_M2), paste0(estimate_M2, " (IRR: ", exp_estimate_M2, ") ", pval_str_M2), "-"),
-    `M3 (+ MIPEX)`    = if_else(!is.na(estimate_M3), paste0(estimate_M3, " (IRR: ", exp_estimate_M3, ") ", pval_str_M3), "-"),
-    `M4 (Interaction)` = if_else(!is.na(estimate_M4), paste0(estimate_M4, " (IRR: ", exp_estimate_M4, ") ", pval_str_M4), "-")
+    `M1_total (no LIBE)`  = if_else(!is.na(estimate_M1_total),
+                                    paste0(estimate_M1_total, " (IRR: ",
+                                           exp_estimate_M1_total, ") ",
+                                           pval_str_M1_total), "-"),
+    `M2_direct (+ LIBE)` = if_else(!is.na(estimate_M2_direct),
+                                   paste0(estimate_M2_direct, " (IRR: ",
+                                          exp_estimate_M2_direct, ") ",
+                                          pval_str_M2_direct), "-")
   ) %>%
-  dplyr::select(Predictor, `M1 (Baseline)`, `M2 (+ Minority)`, `M3 (+ MIPEX)`, `M4 (Interaction)`)
+  dplyr::select(Predictor, `M1_total (no LIBE)`, `M2_direct (+ LIBE)`)
+
+cat("\n--- Coefficienti frequentist mirror: M1_total vs M2_direct ---\n")
+print(tabella_compatta, width = Inf)
+message("✅ Frequentist mirror complete: 2/2 estimand twins fit, gates passed.")
 
 knitr::kable(tabella_compatta, format = "markdown", caption = "Confronto dei Coefficienti e degli Incident Rate Ratios (IRR)")

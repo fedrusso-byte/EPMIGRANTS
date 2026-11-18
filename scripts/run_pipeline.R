@@ -2,14 +2,20 @@
 # run_pipeline.R — EPMigrants Data Pipeline Orchestrator
 # Runs all pipeline stages in separate R processes to manage memory.
 # Usage: Rscript scripts/run_pipeline.R
+# Reproducibility (audit item 7, 2026-11-18): pin the CRAN mirror so the
+# on-demand install fallback in load_packages() targets a stable default
+# HTTPS mirror on any machine. With renv.lock (created 2026-11-18) in place
+# this fallback should remain a no-op in day-to-day runs.
+options(repos = c(CRAN = "https://cloud.r-project.org"))
 
 # =============================================================================
 # 1. Configuration and Dependencies
 # =============================================================================
 
 # Pipeline configuration - select which model versions to run
+# (the legacy "FE" variant was quarantined in scripts/archive/ on 2026-11-18)
 pipeline_config <- list(
-  model_version = "Bayesian", # Options: "Standard", "FE", "Bayesian"
+  model_version = "Bayesian",     # Options: "Standard", "Bayesian"
   comparison_version = "Bayesian" # Options: "Standard", "Bayesian"
 )
 
@@ -43,9 +49,11 @@ core_scripts <- c(
   "04_download_problem_indicators.R"
 )
 
+# 05_models.R (2026-11-18) is the frequentist mirror of the two Bayesian
+# estimands; the legacy country-FE variant (05_models_FE.R, keyword-DV vintage)
+# is quarantined in scripts/archive/ and no longer selectable.
 model_map <- list(
   "Standard" = "05_models.R",
-  "FE"       = "05_models_FE.R",
   "Bayesian" = "05_models_Bayesian.R"
 )
 
@@ -61,6 +69,18 @@ selected_comp   <- comparison_map[[pipeline_config$comparison_version]]
 # sample (output/df_model_data.rds) consumed by 05_models_Bayesian.R
 # (decision 2026-11-12). The coefficient extraction (07) requires fits from
 # BOTH engines and is therefore appended only for the Bayesian variant.
+# Only matched-engine combinations are valid: 05_models.R always runs (shared
+# MIPEX-only sample), while 06/07 consume the fits of the selected engine —
+# mixing engines across the two selectors would compare mismatched artifacts.
+stopifnot(
+  "model_version and comparison_version must use the same engine ('Standard' or 'Bayesian')" =
+    identical(pipeline_config$model_version, pipeline_config$comparison_version),
+  "unknown model_version" =
+    pipeline_config$model_version %in% names(model_map),
+  "unknown comparison_version" =
+    pipeline_config$comparison_version %in% names(comparison_map)
+)
+
 scripts_to_run <- unique(c(core_scripts, "05_models.R", selected_model, selected_comp))
 if (pipeline_config$model_version == "Bayesian") {
   scripts_to_run <- c(scripts_to_run, "07_extract_all_coefficients.R")
@@ -152,7 +172,7 @@ for (i in seq_along(scripts_to_run)) {
   if (i <= length(core_scripts)) {
     description <- sprintf("Core step %d", i)
   } else if (script_name == "05_models.R") {
-    description <- "Fitting frequentist ZINB models + shared MIPEX-only sample"
+    description <- "Fitting frequentist mirror (M1_total/M2_direct) + shared MIPEX-only sample"
   } else if (script_name == selected_model) {
     description <- sprintf("Fitting models (%s)", pipeline_config$model_version)
   } else if (script_name == "07_extract_all_coefficients.R") {

@@ -43,6 +43,18 @@
 #     identification; the effect remains mostly between-MEP); UK minority
 #     MEPs vanish in the 9th term (empirical composition feature of the
 #     primary sample, NOT a filter).
+#   - DV PROMOTION (decision FR, 2026-11-18 — Option A; audit remediation
+#     item 1): the fit runs on the refined LLM (R2) DV shipped inside
+#     output/df_model_data.rds by the 2026-11-17 promotion (05_models.R §1b;
+#     739 in-sample events; former keyword counts kept on the panel as
+#     pqs_discrimination_keyword = 1,244 in-sample). DV-dependent invariants
+#     recomputed 2026-11-18: minority events by term are 12 / 27 / 11
+#     (keyword vintage was 17 / 24 / 9 — now pinned as a keyword-vintage
+#     cross-check). All structural invariants (minority cells 127/91/115
+#     MEP-years, 28/21/23 MEPs, 12 term-spanning minority MEPs) are unchanged.
+#     The keyword-vintage fit of this model is archived in
+#     output/archive_keyword_dv_2026-11-18/ and remains a valid appendix
+#     reference for the keyword estimand.
 #   - All outputs use DISTINCT names (bayesian_model_term.rds,
 #     bayesian_term_*.csv): nothing in output/ is overwritten. NOT wired
 #     into run_pipeline.R — run standalone under the project renv.
@@ -117,8 +129,16 @@ stopifnot(
     identical(as.integer(minority_by_term$mep_years), c(127L, 91L, 115L)),
   "Minority MEPs by term must match (28 / 21 / 23)" =
     identical(as.integer(minority_by_term$meps), c(28L, 21L, 23L)),
-  "Minority events by term must match (17 / 24 / 9; +2 VIII and +1 IX from the DV-201 force-keeps)" =
-    identical(as.integer(minority_by_term$events), c(17L, 24L, 9L)),
+  "Minority events by term must match the refined DV (12 / 27 / 11; recomputed 2026-11-18 for the Option-A promotion — keyword vintage was 17 / 24 / 9)" =
+    identical(as.integer(minority_by_term$events), c(12L, 27L, 11L)),
+  "Refined in-sample DV sum must match the promoted panel (739)" =
+    sum(df_model_data$pqs_discrimination) == 739,
+  "Keyword-vintage in-sample DV sum must match the promoted panel (1,244)" =
+    sum(df_model_data$pqs_discrimination_keyword) == 1244,
+  "Keyword-vintage minority events by term must match (17 / 24 / 9; cross-check that the panel ships the same keyword column the 2026-11-13 fit used)" =
+    identical(as.integer(tapply(df_model_data$pqs_discrimination_keyword[df_model_data$minority == 1],
+                                df_model_data$legislative_term[df_model_data$minority == 1], sum)),
+              c(17L, 24L, 9L)),
   "Term-spanning minority MEPs must match (8 two-term + 4 three-term)" =
     sum(mep_terms_minority$n_terms == 2) == 8 &&
       sum(mep_terms_minority$n_terms == 3) == 4
@@ -189,12 +209,18 @@ print(as.data.frame(df_model_data %>%
 # ==============================================================================
 # 2. PRIORS AND MODEL: legislature-term heterogeneity on the primary spec
 # ==============================================================================
-# Priors and sampling settings are IDENTICAL to 05_models_Bayesian.R so the
-# alternative fit is directly comparable to the primary MIPEX-only fit:
-#   - student_t(3, 0, 2.5) on all population-level coefficients (class "b")
-#     and on the zero-inflation intercept (class "zi");
-#   - brms default weakly-informative prior on the random-effect SDs;
-#   - 4 chains x 2,000 iterations (1,000 warmup), adapt_delta = 0.95.
+# Priors and sampling settings replicate the primary specification AS OF
+# CREATION (pre-promotion, keyword-DV vintage): student_t(3, 0, 2.5) on all
+# population-level coefficients (class "b") and on the zero-inflation
+# intercept (class "zi"); brms default weakly-informative prior on the
+# random-effect SDs; 4 chains x 2,000 iterations (1,000 warmup),
+# adapt_delta = 0.95, so the alternative fit remains comparable to the
+# primary MIPEX-only fit at the level of model structure and priors.
+# NOTE (audit fix 2026-11-18): the earlier "IDENTICAL to 05_models_Bayesian.R"
+# claim is no longer true — the primary moved to 4 chains x 4,000 iterations
+# (1,500 warmup) at the 2026-11-17 promotion, and this variant was NOT
+# re-aligned. The variant was refitted on the refined DV (remediation 1,
+# 2026-11-18 'Option A') under these settings; no further rerun is planned.
 priors_common <- c(
   set_prior("student_t(3, 0, 2.5)", class = "b"),
   set_prior("student_t(3, 0, 2.5)", class = "zi")

@@ -27,6 +27,22 @@
 #     project renv.
 #   - brm(file = ...) caches by path: if the model spec changes, delete
 #     output/bayesian_model_libe.rds first or the stale fit loads silently.
+#   - DV PROMOTION (decision FR, 2026-11-18 — Option A; audit remediation
+#     item 1): the keyword DV shipped in df_merged_3.csv is replaced IN
+#     MEMORY by the refined LLM (R2) DV promoted to the primary
+#     specification (05_models.R §1b, 2026-11-17) via the overlay in §1b
+#     below; the former keyword counts are kept as
+#     pqs_discrimination_keyword for vintage cross-checks. Sample structure
+#     is unchanged (N 11,042; 28 countries; focal cell 56 MEP-years /
+#     11 MEPs). DV-dependent facts recomputed on the refined DV:
+#     sample DV sum 753 (keyword vintage on this same sample: 1,270);
+#     focal-cell events 21 (keyword vintage was 23; 23.2% of focal rows
+#     positive vs 25% before). The keyword-vintage fit of this model is
+#     archived in output/archive_keyword_dv_2026-11-18/ and remains a valid
+#     appendix reference for the keyword estimand.
+#   - Tripwire note (2026-11-18): this script previously carried NO DV-sum
+#     assert; refined DV-sum and focal-event asserts are now pinned so a
+#     future vintage drift cannot pass silently (audit finding 1).
 # ==============================================================================
 
 # free memory
@@ -74,6 +90,127 @@ stopifnot(
   ) %in% names(df_merged_3))
 )
 
+# ------------------------------------------------------------------------------
+# §1b. DV PROMOTION OVERLAY (2026-11-18, FR decision "Option A" — audit
+# remediation item 1): df_merged_3.csv still ships the KEYWORD DV counts (the
+# 2026-11-13 aggregate artifact), but the primary specification was promoted
+# to the refined LLM (R2) DV on 2026-11-17 (05_models.R §1b). To stay on the
+# primary estimand, this script reconstructs the refined DV exactly as the
+# primary script does — question counts re-aggregated from the epq table over
+# the promoted kept-DV id lists — and swaps it in in memory:
+#   pqs_discrimination         <- refined LLM (R2) counts (PRIMARY estimand)
+#   pqs_discrimination_keyword <- former keyword counts (vintage cross-check)
+# The overlay changes DV values only (rows/columns untouched); the
+# total_questions equality assert below proves the aggregation row-coverage
+# is identical to the primary panel.
+# ------------------------------------------------------------------------------
+refined_keptdv <- read_csv(here("data", "dv201_llm_refined_keptdv_ids.csv"),
+                           show_col_types = FALSE)
+verified_in <- read_csv(here("data", "dv201_llm_verified_in_ids.csv"),
+                        show_col_types = FALSE)
+stopifnot(
+  "refined retained-DV list must have exactly 529 rows" =
+    nrow(refined_keptdv) == 529,
+  "verified-IN list must have exactly 255 rows" = nrow(verified_in) == 255
+)
+refined_ids <- refined_keptdv$id
+verified_ids <- verified_in$id
+epq <- readRDS(here("data_processed", "epq.rds"))
+stopifnot(
+  "all 529 refined ids must exist in epq.rds" = all(refined_ids %in% epq$id),
+  "all 255 verified-IN ids must exist in epq.rds" = all(verified_ids %in% epq$id),
+  "retained-DV and verified-IN lists must not overlap" =
+    !any(refined_ids %in% verified_ids),
+  "id lists must be unique" = !any(duplicated(c(refined_ids, verified_ids)))
+)
+dv_r2_ids <- c(refined_ids, verified_ids)
+iv_r <- match(refined_ids, epq$id)
+iv_v <- match(verified_ids, epq$id)
+stopifnot(
+  "primary DV flag must be binary" =
+    all(epq$pq_discrimination %in% c(0L, 1L)),
+  "all 529 refined retained-DV ids must be DV=1 in the primary import" =
+    all(epq$pq_discrimination[iv_r] == 1L),
+  "none of the 255 verified-INs may already be DV=1 in the primary import" =
+    all(epq$pq_discrimination[iv_v] == 0L),
+  "all 529 refined ids must be in-window (VII..IX)" =
+    all(as.Date(epq$date)[iv_r] >= as.Date("2009-07-14") &
+          as.Date(epq$date)[iv_r] <= as.Date("2024-07-15") &
+          !is.na(epq$date)[iv_r]),
+  "all 255 verified-IN ids must be in-window (VII..IX)" =
+    all(as.Date(epq$date)[iv_v] >= as.Date("2009-07-14") &
+          as.Date(epq$date)[iv_v] <= as.Date("2024-07-15") &
+          !is.na(epq$date)[iv_v])
+)
+assign_term_sensllmr2 <- function(date_col) {
+  case_when(
+    date_col >= lubridate::ymd("2004-07-20") & date_col <= lubridate::ymd("2009-07-13") ~ "6th",
+    date_col >= lubridate::ymd("2009-07-14") & date_col <= lubridate::ymd("2014-06-30") ~ "7th",
+    date_col >= lubridate::ymd("2014-07-01") & date_col <= lubridate::ymd("2019-07-01") ~ "8th",
+    date_col >= lubridate::ymd("2019-07-02") & date_col <= lubridate::ymd("2024-07-15") ~ "9th",
+    TRUE ~ NA_character_
+  )
+}
+d_win <- epq %>%
+  filter(!is.na(date), as.Date(date) >= as.Date("2009-07-14"),
+         as.Date(date) <= as.Date("2024-07-15")) %>%
+  mutate(term_ch = assign_term_sensllmr2(as.Date(date)))
+stopifnot("primary keyword in-window DV events must be 1,319" =
+            sum(d_win$pq_discrimination) == 1319)
+epq <- epq %>% mutate(pq_r2 = as.integer(id %in% dv_r2_ids))
+d_win2 <- epq %>%
+  filter(!is.na(date), as.Date(date) >= as.Date("2009-07-14"),
+         as.Date(date) <= as.Date("2024-07-15")) %>%
+  mutate(term_ch = assign_term_sensllmr2(as.Date(date)))
+stopifnot(
+  "refined in-window DV events must be 784 (529 retained + 255 verified)" =
+    sum(d_win2$pq_r2) == 784,
+  "the replacement must drop 535 primary DV events in-window" =
+    sum(d_win2$pq_r2) - sum(d_win$pq_discrimination) == -535
+)
+legislature_starts <- tibble(
+  legislative_term = c("6th", "7th", "8th", "9th"),
+  term_start = lubridate::ymd(c("2004-07-20", "2009-07-14", "2014-07-01", "2019-07-02")),
+  term_end = lubridate::ymd(c("2009-07-13", "2014-06-30", "2019-07-01", "2024-07-15"))
+)
+questions_r2 <- epq %>%
+  mutate(dates = as.Date(date)) %>%
+  filter(dates >= as.Date("2004-07-20"), dates <= as.Date("2024-06-08")) %>%
+  mutate(legislative_term = assign_term_sensllmr2(dates)) %>%
+  left_join(legislature_starts, by = "legislative_term") %>%
+  mutate(year_index = (lubridate::interval(term_start, dates) %/% lubridate::years(1)) + 1) %>%
+  mutate(leg_year = paste0(legislative_term, year_index)) %>%
+  filter(year_index <= 5) %>%
+  group_by(mep_id, leg_year) %>%
+  summarise(
+    pqs_discrimination_r2 = sum(pq_r2 == 1L, na.rm = TRUE),
+    total_questions_r2 = n(),
+    .groups = "drop"
+  )
+stopifnot("questions_r2 must not be empty" = nrow(questions_r2) > 0)
+df_merged_3 <- df_merged_3 %>%
+  left_join(questions_r2, by = c("mep_id", "leg_year")) %>%
+  mutate(
+    pqs_discrimination_r2 = replace_na(pqs_discrimination_r2, 0L),
+    total_questions_r2 = replace_na(total_questions_r2, 0L),
+    total_questions = replace_na(total_questions, 0L)
+  )
+stopifnot(
+  "total_questions must be identical between primary and R2 aggregation" =
+    all(df_merged_3$total_questions_r2 == df_merged_3$total_questions)
+)
+df_merged_3 <- df_merged_3 %>%
+  rename(
+    pqs_discrimination_keyword = pqs_discrimination,
+    pqs_discrimination = pqs_discrimination_r2
+  ) %>%
+  select(-total_questions_r2)
+message("   [DV promotion] Panel DVs: pqs_discrimination = refined R2 (primary); ",
+        "pqs_discrimination_keyword = former keyword counts (vintage).")
+rm(epq, refined_keptdv, verified_in, refined_ids, verified_ids, dv_r2_ids,
+   iv_r, iv_v, d_win, d_win2, questions_r2, legislature_starts,
+   assign_term_sensllmr2)
+
 # NOTE: no mipex_center here — the alternative specification drops MIPEX
 # entirely, so the drop_na list must NOT require MIPEX coverage.
 model_variables <- c(
@@ -105,7 +242,13 @@ stopifnot(
     all(!(df_libe_model$country == "UK" & df_libe_model$legislative_term == "9th")),
   "Focal cell must match feasibility check (56 MEP-years, 11 MEPs)" =
     sum(is_libe_cell) == 56 &&
-      dplyr::n_distinct(df_libe_model$mep_id[is_libe_cell]) == 11
+      dplyr::n_distinct(df_libe_model$mep_id[is_libe_cell]) == 11,
+  "Refined DV sum must match the promotion recomputation (753)" =
+    sum(df_libe_model$pqs_discrimination) == 753,
+  "Keyword-DV vintage cross-check must match on this sample (1,270; includes the 2026-11-13 DV-201 force-keep events)" =
+    sum(df_libe_model$pqs_discrimination_keyword) == 1270,
+  "Refined focal-cell events must match the promotion recomputation (21; keyword vintage was 23)" =
+    sum(df_libe_model$pqs_discrimination[is_libe_cell]) == 21
 )
 
 # Sample report (context for the results memo)
@@ -144,12 +287,18 @@ message("Sample saved to: output/df_model_data_libe.rds")
 # ==============================================================================
 # 2. PRIORS AND MODEL: minority x libe INTERACTION ON THE ALTERNATIVE SAMPLE
 # ==============================================================================
-# Priors and sampling settings are IDENTICAL to 05_models_Bayesian.R so the
-# alternative fit is directly comparable to the primary MIPEX-only fit:
-#   - student_t(3, 0, 2.5) on all population-level coefficients (class "b")
-#     and on the zero-inflation intercept (class "zi");
-#   - brms default weakly-informative prior on the random-effect SDs;
-#   - 4 chains x 2,000 iterations (1,000 warmup), adapt_delta = 0.95.
+# Priors and sampling settings replicate the primary specification AS OF
+# CREATION (pre-promotion, keyword-DV vintage): student_t(3, 0, 2.5) on all
+# population-level coefficients (class "b") and on the zero-inflation
+# intercept (class "zi"); brms default weakly-informative prior on the
+# random-effect SDs; 4 chains x 2,000 iterations (1,000 warmup),
+# adapt_delta = 0.95, so the alternative fit remains comparable to the
+# primary MIPEX-only fit at the level of model structure and priors.
+# NOTE (audit fix 2026-11-18): the earlier "IDENTICAL to 05_models_Bayesian.R"
+# claim is no longer true — the primary moved to 4 chains x 4,000 iterations
+# (1,500 warmup) at the 2026-11-17 promotion, and this variant was NOT
+# re-aligned. The variant was refitted on the refined DV (remediation 1,
+# 2026-11-18 'Option A') under these settings; no further rerun is planned.
 priors_common <- c(
   set_prior("student_t(3, 0, 2.5)", class = "b"),
   set_prior("student_t(3, 0, 2.5)", class = "zi")
