@@ -39,9 +39,11 @@ zinb_model2 <- readRDS(here("output", "zinb_model2.rds"))
 zinb_model3 <- readRDS(here("output", "zinb_model3.rds"))
 zinb_model4 <- readRDS(here("output", "zinb_model4.rds"))
 
-# Bayesian models (brms)
-bayesian_model_cmp <- readRDS(here("output", "bayesian_model_cmp.rds"))
-bayesian_model_mipex <- readRDS(here("output", "bayesian_model_mipex.rds"))
+# Bayesian models (two-estimand structure, DV-201 validation 2026-11-13;
+# the pre-disposition single-model fit is archived in
+# output/archive_dv201_2026-11-13/)
+bayesian_model_m1_total <- readRDS(here("output", "bayesian_model_m1_total.rds"))
+bayesian_model_m2_direct <- readRDS(here("output", "bayesian_model_m2_direct.rds"))
 
 message("✅ All models loaded successfully")
 
@@ -91,12 +93,13 @@ message("📊 Extracting coefficients from all models...")
 # Frequentist models
 coef_m1 <- tidy_freq_coefs(zinb_model1, "M1: Baseline (Individual Controls)")
 coef_m2 <- tidy_freq_coefs(zinb_model2, "M2: + Minority Predictor")
-coef_m3 <- tidy_freq_coefs(zinb_model3, "M3: + CMP Interaction")
+coef_m3 <- tidy_freq_coefs(zinb_model3, "M3: + MIPEX Main Effect")
 coef_m4 <- tidy_freq_coefs(zinb_model4, "M4: + MIPEX Interaction")
 
-# Bayesian models
-coef_bayes_cmp <- tidy_bayes_coefs(bayesian_model_cmp, "Bayesian: Minority × CMP")
-coef_bayes_mipex <- tidy_bayes_coefs(bayesian_model_mipex, "Bayesian: Minority × MIPEX")
+# Bayesian models (two-estimand structure, DV-201 validation 2026-11-13)
+coef_bayes_m1 <- tidy_bayes_coefs(bayesian_model_m1_total, "M1_total: Minority × MIPEX (no LIBE)")
+coef_bayes_m2 <- tidy_bayes_coefs(bayesian_model_m2_direct, "M2_direct: Minority × MIPEX (+LIBE)")
+coef_bayes <- bind_rows(coef_bayes_m1, coef_bayes_m2)
 
 # ==============================================================================
 # 4. CREATE COMPREHENSIVE TABLE
@@ -107,8 +110,7 @@ message("📋 Creating comprehensive comparison table...")
 freq_results <- bind_rows(coef_m1, coef_m2, coef_m3, coef_m4)
 
 # Add Bayesian results (with compatible columns)
-# Note: For Bayesian, we'll use the conf.low/conf.high as placeholders for p.value
-bayes_results_combined <- bind_rows(coef_bayes_cmp, coef_bayes_mipex) %>%
+bayes_results_combined <- coef_bayes %>%
   mutate(
     p.value = NA_real_  # Bayesian models don't have p-values
   ) %>%
@@ -169,7 +171,7 @@ message("✅ Wide-format table saved: output/model_coefficients_wide_comparison.
 # ==============================================================================
 message("📋 Creating Bayesian-specific table...")
 
-bayes_comparison <- bind_rows(coef_bayes_cmp, coef_bayes_mipex) %>%
+bayes_comparison <- coef_bayes %>%
   mutate(
     term_clean = str_replace_all(term, ":", " × "),
     term_clean = str_replace_all(term_clean, "_center", "")

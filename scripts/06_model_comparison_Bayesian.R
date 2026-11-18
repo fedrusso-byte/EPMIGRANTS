@@ -12,19 +12,25 @@ library(brms)
 message("   Loading Bayesian model and data for visualization...")
 df_model_data <- readRDS(here("output", "df_model_data.rds"))
 # brms models saved with the 'file' argument create .rds files
-bayesian_model_mipex <- readRDS(here("output", "bayesian_model_mipex.rds"))
+# Two-estimand structure (DV-201 validation disposition, 2026-11-13): the
+# visualisation uses M1_total, the total-effect specification (no LIBE
+# committee control). M2_direct is tabulated in 07_extract_all_coefficients.R.
+# The `libe` column kept in the prediction grids is simply unused by the
+# M1_total formula.
+bayesian_model_mipex <- readRDS(here("output", "bayesian_model_m1_total.rds"))
 
 message("   Generating Bayesian expected count panel (Marginal Effects)...")
 
 # Create base grid with covariates fixed at means/reference levels
+# mep_id/country dummy values satisfy the brms grouping factors under
+# re.form = NA + allow_new_levels = TRUE
 base_grid <- df_model_data %>%
   summarise(
     gender = "M",                                           # Reference/most common
     party_family = "Christian democrats and conservatives", # Reference/most common
     libe = 0,                                               # Binary/fixed
     misery_index = mean(misery_index, na.rm = TRUE),
-    discrimination_center = 0,                              # Centered (0 = mean)
-    cmp_center = 0,                                         # Centered (0 = mean)
+    mep_id = "Reference",                                   # Dummy value to satisfy brms grouping
     country = "Reference",                                  # Dummy value to satisfy brms grouping
     total_questions = mean(total_questions, na.rm = TRUE)   # Offset fixed at mean
   )

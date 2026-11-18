@@ -1,0 +1,68 @@
+gold: 334 ids {'OUT': 242, 'IN': 92}; kept-DV=1319 (subtopic-201: 1291)
+full run: 125081 rows, labels {'OUT': 123018, 'IN': 2063}
+
+FULL-RUN metrics (vs 334 gold):
+    accuracy   : 304/334 = 0.910 [0.875, 0.936]
+    precision  : 76/90 = 0.844 [0.756, 0.905]
+    recall     : 76/92 = 0.826 [0.736, 0.890]
+    F1 (point) : 152/182 = 0.835 [0.774, 0.882]
+    batchA  recall 0/1 = 0.00 | specificity 152/158 = 0.96
+    batchB  recall 25/28 = 0.89 | specificity 22/27 = 0.81
+    prec    recall 51/63 = 0.81 | specificity 0/0 = 0.00
+    FN detail (gold IN -> LLM OUT):
+        E-010750/2010          prec    extra_EU
+        E-010896/2010          prec    extra_EU
+        E-011031/2010          prec    non_ethnic
+        E-016119/2015          batchB  non_discrimination
+        E-001836/2023          prec    other
+        E-002519/2021          batchA  extra_EU
+        E-002682/2011          prec    non_discrimination
+        E-002921/2018          prec    non_discrimination
+        E-003526/2018          prec    non_discrimination
+        E-3830/2009            prec    non_discrimination
+        E-3952/2010            prec    non_discrimination
+        E-000610/2020/rev.1    prec    non_discrimination
+        E-006817/2013          prec    other
+        E-7644/2010            prec    extra_EU
+        E-000782/2013          batchB  extra_EU
+        E-007949/2017          batchB  other
+    LLM PASS on kept-DV (1,319): 642/1319 = 0.487 [0.460, 0.514]
+    LLM PASS on subtopic-201 (1,291): 617/1291 = 0.478 [0.451, 0.505]
+        VII: PASS 300/597
+        VIII: PASS 235/472
+        IX: PASS 82/222
+
+FULL-CORPUS patterns:
+    term VII: n=54922 IN=987 (1.80%)
+    term VIII: n=45892 IN=726 (1.58%)
+    term IX: n=24267 IN=350 (1.44%)
+    OUT reason other                75023 (61.0%)
+    OUT reason non_discrimination   23165 (18.8%)
+    OUT reason extra_EU             15975 (13.0%)
+    OUT reason non_ethnic           8812 (7.2%)
+    OUT reason MALFORMED_EMPTY      17 (0.0%)
+    OUT reason MALFORMED_non_disc   6 (0.0%)
+    OUT reason MALFORMED_non_discrim 4 (0.0%)
+    OUT reason MALFORMED_non_discrimmination 2 (0.0%)
+    OUT reason MALFORMED_non        2 (0.0%)
+    OUT reason MALFORMED_unrelated_medical_health_issue 1 (0.0%)
+    OUT reason MALFORMED_unrelated_to_the_study 1 (0.0%)
+    OUT reason MALFORMED_the_question_text_lacks_any_indication_of_minority_or_discrimination_themes 1 (0.0%)
+    OUT reason MALFORMED_non_discrimration 1 (0.0%)
+    OUT reason MALFORMED_non_non_discrimination 1 (0.0%)
+    OUT reason MALFORMED_n          1 (0.0%)
+    OUT reason MALFORMED_in_scope   1 (0.0%)
+    OUT reason MALFORMED_migration  1 (0.0%)
+    OUT reason MALFORMED_the_question_concerns_violent_political_incidents_and_media_impartiality 1 (0.0%)
+    OUT reason MALFORMED_non_ethnici 1 (0.0%)
+    OUT reason MALFORMED_agriculture_subsidy_procedure 1 (0.0%)
+    OUT reason MALFORMED_extra_e    1 (0.0%)
+    full_glm_body_meta_run1.json: prompt=68,696,261 eval=2,466,180
+    full_glm_body_meta.json: prompt=1,314,604 eval=48,017
+    TOTAL: prompt 70,010,865 + eval 2,514,197 tokens
+
+candidates (LLM-IN outside kept-DV): 1421 -> data/dv201_llm_candidates_tocode.csv
+    candidates missing from data_processed/epq.csv (term/subtopic left blank): 0
+7c(a) sample: 30 pilot INs + 150 random pilot OUTs -> data/dv201_llm_adjudication_sample_tocode.csv (seed 42)
+    text columns: full text for 1578/1578 export ids (missing: 0); llm input truncated at 260 words: 83; corpus text multiline (screen dropped line 1): 1504
+analysis cache -> /home/federusso/progetti/EPmigrants/output/llm_screen/fullrun_analysis_cache.json

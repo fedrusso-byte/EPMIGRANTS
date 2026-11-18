@@ -1,7 +1,11 @@
 # ==============================================================================
-# # 05_models.R — Zero-Inflated NB GLMM + Marginal Effects (MIPEX FE Version)
-# Fits multilevel ZINB model, computes variance decomposition,
-# coefficient tables, effect plots, and marginal predictions.
+# # 05_models_FE.R — [LEGACY — NOT IN PIPELINE] Zero-Inflated NB GLMM FE Variant
+# Legacy specification: the interaction uses the CMP-based minority x
+# cmp_center term and the hardcoded claim-making pressure feature
+# (discrimination_mean), so its sample construction excludes HU, SK, LU and RO.
+# Not part of the current pipeline (run_pipeline.R uses the Bayesian variant)
+# and not reported in the manuscript. Retained for archival purposes only;
+# it predates the 2026-11-12 MIPEX-only decision.
 # ==============================================================================
 
 # free memory

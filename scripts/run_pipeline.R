@@ -57,7 +57,14 @@ comparison_map <- list(
 selected_model <- model_map[[pipeline_config$model_version]]
 selected_comp   <- comparison_map[[pipeline_config$comparison_version]]
 
-scripts_to_run <- c(core_scripts, selected_model, selected_comp)
+# 05_models.R ALWAYS runs first: it defines the shared MIPEX-only estimation
+# sample (output/df_model_data.rds) consumed by 05_models_Bayesian.R
+# (decision 2026-11-12). The coefficient extraction (07) requires fits from
+# BOTH engines and is therefore appended only for the Bayesian variant.
+scripts_to_run <- unique(c(core_scripts, "05_models.R", selected_model, selected_comp))
+if (pipeline_config$model_version == "Bayesian") {
+  scripts_to_run <- c(scripts_to_run, "07_extract_all_coefficients.R")
+}
 
 # =============================================================================
 # 3. Pre-flight Checks
@@ -144,8 +151,12 @@ for (i in seq_along(scripts_to_run)) {
   
   if (i <= length(core_scripts)) {
     description <- sprintf("Core step %d", i)
-  } else if (i == length(core_scripts) + 1) {
+  } else if (script_name == "05_models.R") {
+    description <- "Fitting frequentist ZINB models + shared MIPEX-only sample"
+  } else if (script_name == selected_model) {
     description <- sprintf("Fitting models (%s)", pipeline_config$model_version)
+  } else if (script_name == "07_extract_all_coefficients.R") {
+    description <- "Extracting unified coefficient tables"
   } else {
     description <- sprintf("Comparing models (%s)", pipeline_config$comparison_version)
   }

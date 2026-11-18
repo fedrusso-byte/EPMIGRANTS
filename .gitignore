@@ -28,6 +28,9 @@ manuscript/**/*_files/
 *.rds
 *.RDS
 
+# Python cache artifacts
+__pycache__/
+
 # Dropbox metadata
 *:com.dropbox.attrs
 

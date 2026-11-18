@@ -20,8 +20,6 @@ base_grid <- df_model_data %>%
     party_family = "Christian democrats and conservatives", # Categoria di riferimento/più comune
     libe = 0,                                               # Tipicamente binaria o fissa
     misery_index = mean(misery_index, na.rm = TRUE),
-    discrimination_center = 0,                              # Centrata (0 = media)
-    cmp_center = 0,                                         # Centrata (0 = media)
     total_questions = mean(total_questions, na.rm = TRUE)   # Fissiamo l'offset alla media dei dati originali
   )
 
