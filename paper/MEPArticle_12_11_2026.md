@@ -407,7 +407,7 @@ Accordingly, our third hypothesis is as follows:
 
 3.  **Data**
 
-The empirical investigation draws primarily on data from the EUQuest Project, which provides systematic information on issue attention and representative characteristics in the European Parliament. EUQuest contains approximately 180,000 Questions for Written Answer submitted in the European Parliament between 1994 and 2024 and classified according to the Comparative Agendas Project coding scheme by fine-tuned LLaMA model, validated against human coding (Carammia, Iacus, and Porro 2026). It also provides information on the political and institutional characteristics of MEPs serving during this period. For the present study, we use observations from the seventh, eighth, and ninth parliamentary terms (2009--2024) and link them to an original, hand-coded biographical dataset identifying MEPs with first- or second-generation migratory backgrounds or racialised minority backgrounds. The 2009--2024 period covers the three most recent completed parliamentary terms, covering a the periods before and after the heightened salience of migration in public and political debate which was triggered by the refugee crisis in 2015. The analysis covers MEPs elected in all EU Member States covered by the Migrant Integration Policy Index (MIPEX) — that is, 27 of the 28 EU Member States; Malta, which MIPEX does not assess, is therefore excluded.
+The empirical investigation draws primarily on data from the EUQuest Project, which provides systematic information on issue attention and representative characteristics in the European Parliament. EUQuest contains approximately 180,000 Questions for Written Answer submitted in the European Parliament between 1994 and 2024 and classified according to the Comparative Agendas Project coding scheme by fine-tuned LLaMA model, validated against human coding (Carammia, Iacus, and Porro 2026). It also provides information on the political and institutional characteristics of MEPs serving during this period. For the present study, we use observations from the seventh, eighth, and ninth parliamentary terms (2009--2024) and link them to an original, hand-coded biographical dataset identifying MEPs with first- or second-generation migratory backgrounds or racialised minority backgrounds. The 2009--2024 period covers the three most recent completed parliamentary terms, covering the periods before and after the heightened salience of migration in public and political debate which was triggered by the refugee crisis in 2015. The analysis covers MEPs elected in all EU Member States covered by the Migrant Integration Policy Index (MIPEX) — that is, 27 of the 28 EU Member States; Malta, which MIPEX does not assess, is therefore excluded.
 
 The individual-level data are complemented with country-level information from the Migrant Integration Policy Index (MIPEX)[^2]. Specifically, we use the MIPEX anti-discrimination score to capture the strength of national legal and institutional frameworks addressing discrimination on grounds including racial or ethnic origin, religion, and nationality. Higher scores indicate more comprehensive legal protections and institutional mechanisms. Importantly, the measure captures the formal anti-discrimination policy framework rather than the prevalence or individual experience of discrimination.
 
@@ -736,7 +736,82 @@ across them, so the analysis does not identify even the direction of
 contextual variation. Stronger national anti-discrimination frameworks
 are therefore not demonstrably associated with a more pronounced
 difference between minority-background and other MEPs in their attention
-to discrimination-related issues.
+to discrimination-related issues. The headline average, however, should
+not be read as a uniform pattern: two variant analyses, reported below
+in turn, examine whether the strength of the minority-background
+association differs between members and non-members of the LIBE
+Committee and across the three parliamentary terms covered by the
+observation window.
+
+**Committee membership.** The first variant analysis asks whether the
+association documented above is itself contingent on the institutional
+venue in which MEPs operate. The direct-effect specification treats
+LIBE Committee membership as a control; the variant instead interacts
+minority background with LIBE membership within the same zero-inflated
+negative binomial multilevel framework, keeping the demographic and
+political controls, the offset, and the random-intercept structure, and
+dropping the MIPEX covariates. Because the specification is not subject
+to the MIPEX coverage restriction, it is estimated on a slightly larger
+alternative sample that also retains Malta, which MIPEX does not assess
+(11,042 MEP-year observations). Among members of the committee,
+minority-background MEPs are estimated to submit about 7.1 times as
+many discrimination-related questions as comparable colleagues without
+a minority background (95% CrI \[2.58, 19.03\]); outside the committee,
+the corresponding estimate is about 3.9 times (95% CrI \[2.02, 7.46\]).
+Viewed from the other side, LIBE membership is associated with about
+3.4 times higher questioning rates among minority-background MEPs (95%
+CrI \[1.16, 10.55\]), against about 1.9 times among other MEPs (95% CrI
+\[1.30, 2.74\]). The interaction coefficient itself, however, is not
+credibly different from zero (β = 0.584, 95% CrI \[−0.593, 1.739\]), and
+the focal cell behind these contrasts is small — 56 MEP-year
+observations from 11 minority-background MEPs on the committee,
+contributing 21 question events — so the model cannot establish that
+the committee premium differs between the two groups. The pattern is
+thus consistent with committee membership operating as one channel
+through which biographically grounded attention translates into
+legislative activity — the interpretation underlying the
+total/direct-effect distinction — but the committee premium does not
+credibly differ between minority-background and other MEPs. For
+computational economy the variant was estimated with lighter sampling
+settings than the primary models (four chains of 2,000 iterations,
+1,000 warm-up); all convergence diagnostics are nevertheless satisfied
+(maximum Rhat 1.003, minimum bulk effective sample size 2,535, no
+divergent transitions).
+
+**Legislative terms.** The second variant analysis asks whether the
+pooled association is stable over the observation window. The model
+extends the direct-effect specification with indicators for the eighth
+and ninth parliamentary terms (the seventh as the reference category)
+and their interactions with minority background, and is estimated on
+the same estimation panel and refined dependent variable as the
+primary models. At the models' reference profile, the association is
+credible in every term but differs markedly in strength: about 2.8
+times as many discrimination-related questions as comparable
+colleagues in the seventh term (95% CrI \[1.03, 7.14\]), about 10.3
+times in the eighth (95% CrI \[3.72, 27.07\]), and about 5.9 times in
+the ninth (95% CrI \[1.90, 16.53\]). The eighth-term estimate exceeds
+the seventh-term one by a credible factor of 3.72 (95% CrI \[1.33,
+10.18\]); the corresponding ninth-to-seventh contrast is 2.09 (95%
+CrI \[0.63, 7.21\]) and does not exclude zero; and the pooled contrast
+of the eighth and ninth terms against the seventh remains credible
+(2.76, 95% CrI \[1.11, 7.31\]). These estimates rest on 12, 27, and 11
+in-sample question events submitted by minority-background MEPs in the
+three terms, respectively, and are correspondingly imprecise: they
+establish heterogeneity across terms rather than precise magnitudes.
+With that caveat, the temporal profile is suggestive. The association
+peaks in the eighth term (2014--2019), the legislature containing the
+height of the refugee crisis that began in 2015 and the politicisation
+of migration and discrimination that followed it — the very
+development the observation window was designed to capture — a pattern
+consistent with the association strengthening when the political
+environment makes discrimination-related issues more salient, though
+the design cannot exclude that the eighth-term peak partly reflects
+the specific composition of that Parliament. As with the committee
+variant, the model was estimated with lighter sampling settings than
+the primary models for computational economy (four chains of 2,000
+iterations, 1,000 warm-up); all convergence diagnostics are satisfied
+(maximum Rhat 1.002, minimum bulk effective sample size 2,688, no
+divergent transitions).
 
 **Robustness.** Three further checks assess the sensitivity of these
 results. The first concerns the treatment of LIBE Committee membership.
@@ -780,7 +855,8 @@ the Bayesian estimates of 1.543 and 1.525; the LIBE coefficient is equally
 close (β = 0.680, 95% CI \[0.303, 1.056\], against the Bayesian 0.704,
 \[0.341, 1.056\]); and the MIPEX main and interaction effects remain
 negligible under both engines, with 95% CIs on the interaction of
-\[−0.061, 0.060\] and \[−0.066, 0.053\] mirroring the Bayesian intervals.
+\[−0.061, 0.060\] and \[−0.066, 0.053\] mirroring the Bayesian intervals. The full results of the two
+maximum-likelihood fits are reported in Appendix C, Table C1.
 Under both operationalizations and under both estimation engines H1 is
 supported, H2 is not supported, and the H3 interaction is never credibly
 different from zero.
@@ -1347,3 +1423,68 @@ differing in classification noise, the keyword-based results
 corroborate the robustness of the findings to measurement choices, and
 the caveats in the main text about the normative meaning of right-wing
 nationalist attention apply unchanged.
+
+**Appendix C. Maximum-Likelihood Replication of the Primary Models**
+
+The third robustness check in Section 5 refits the two primary
+specifications by maximum likelihood rather than by Bayesian posterior
+sampling. Table C1 reports the full results of the two fits, which use
+the same zero-inflated negative binomial specifications as Table 1 —
+the same fixed-effect structure, the offset for the log number of
+written questions, intercept-only zero-inflation, and random intercepts
+for MEPs and countries — estimated in glmmTMB on the same estimation
+panel of 10,955 MEP-year observations with the refined dependent
+variable (739 question events). The fixed effects closely track the
+Bayesian estimates, as the comparison in the main text notes. Two
+differences are worth flagging before the table. First, the variance
+components are more weakly identified than the fixed effects: the
+maximum-likelihood estimate of the country-level random-intercept
+standard deviation lies at the boundary of the parameter space (below
+0.001), whereas the Bayesian posterior for the same quantity is
+comfortably interior (0.44 and 0.43 in the two specifications); the
+MEP-level standard deviation, by contrast, is estimated at 1.35 and
+1.30 against the Bayesian 1.12 and 1.08. Second, the pattern of nominal
+significance differs from Table 1 for exactly two coefficients — the
+MIPEX main effect and the Non-Inscrits party dummy — whose Wald
+intervals here include zero although the corresponding credible
+intervals in Table 1 exclude it; both differences sit at the
+conventional threshold and do not involve different point estimates.
+
+**Table C1.** Maximum-likelihood estimates from the two zero-inflated negative binomial specifications in Table 1 (M1: total effect; M2: direct effect), estimated with the refined (LLM-verified) dependent variable
+
+| **Predictor** | **M1: β** | **M1: 95% CI** | **M1: Exp(β)** | **M2: β** | **M2: 95% CI** | **M2: Exp(β)** |
+|:-------------------------|----------------:|:----------------------|---------------:|----------------:|:----------------------|---------------:|
+| *(Intercept)* | −6.6519 (0.2154) | [−7.0740, −6.2297]{.underline} | 0.0013 | −6.6956 (0.2133) | [−7.1136, −6.2776]{.underline} | 0.0012 |
+| *Gender: Male* | −0.1367 (0.1417) | [−0.4143, 0.1409] | 0.8722 | −0.0903 (0.1400) | [−0.3646, 0.1840] | 0.9137 |
+| *Misery Index* | 0.0112 (0.0069) | [−0.0025, 0.0248] | 1.0112 | 0.0108 (0.0069) | [−0.0027, 0.0242] | 1.0108 |
+| *PartyFamily (Ref. Christian Democrats)* |   |   |   |   |   |   |
+| *The Left* | 0.7140 (0.2688) | [0.1871, 1.2409]{.underline} | 2.0421 | 0.7160 (0.2635) | [0.1996, 1.2324]{.underline} | 2.0462 |
+| *Eurosceptic Conservatives* | −0.1414 (0.3170) | [−0.7626, 0.4799] | 0.8682 | −0.1224 (0.3119) | [−0.7337, 0.4888] | 0.8848 |
+| *Eurosceptics* | 0.9294 (0.2808) | [0.3790, 1.4798]{.underline} | 2.5330 | 0.9399 (0.2757) | [0.3996, 1.4803]{.underline} | 2.5598 |
+| *Greens-EFA* | 0.7258 (0.2772) | [0.1824, 1.2692]{.underline} | 2.0663 | 0.7425 (0.2720) | [0.2093, 1.2757]{.underline} | 2.1011 |
+| *Liberals* | 0.5053 (0.2532) | [0.0090, 1.0016]{.underline} | 1.6575 | 0.5046 (0.2495) | [0.0155, 0.9936]{.underline} | 1.6563 |
+| *Non Inscripts* | 0.4910 (0.2963) | [−0.0897, 1.0718] | 1.6340 | 0.4773 (0.2910) | [−0.0931, 1.0477] | 1.6117 |
+| *Right Wing Nationalists* | 0.3860 (0.2887) | [−0.1799, 0.9518] | 1.4710 | 0.4077 (0.2845) | [−0.1498, 0.9653] | 1.5034 |
+| *Social Democrats* | 0.7484 (0.2027) | [0.3510, 1.1457]{.underline} | 2.1136 | 0.7484 (0.1998) | [0.3568, 1.1400]{.underline} | 2.1136 |
+| *Committee: LIBE* | — | — | — | 0.6796 (0.1921) | [0.3031, 1.0561]{.underline} | 1.9731 |
+| *Minority* | 1.5893 (0.4175) | [0.7710, 2.4076]{.underline} | 4.9003 | 1.5457 (0.4103) | [0.7415, 2.3498]{.underline} | 4.6911 |
+| *Mipex* | 0.0125 (0.0047) | [0.0034, 0.0217]{.underline} | 1.0126 | 0.0119 (0.0046) | [0.0029, 0.0208]{.underline} | 1.0119 |
+| *Minority × Mipex* | −0.0004 (0.0308) | [−0.0608, 0.0599] | 0.9996 | −0.0068 (0.0303) | [−0.0662, 0.0526] | 0.9932 |
+| *Random-intercept SD (Country)* | 0.0000 | — | 1.0000 | 0.0000 | — | 1.0000 |
+| *Random-intercept SD (MEP)* | 1.3529 | — | 3.8687 | 1.2991 | — | 3.6659 |
+
+*Notes: Entries are maximum-likelihood coefficients with standard
+errors in parentheses and Wald 95% confidence intervals for the two
+specifications of Table 1, estimated in glmmTMB on the same panel of
+10,955 MEP-year observations with the offset for the log number of
+written questions; the LIBE row appears only in the M2 columns.
+Underlined text denotes that the 95% confidence interval excludes
+zero. Because both models include an interaction, the coefficients
+for minority background and MIPEX represent conditional effects at
+the reference value of the other interacting variable. Exponentiated
+values are incidence rate ratios. The last two rows report the
+country-level and MEP-level random-intercept standard deviations as
+maximum-likelihood point estimates; standard errors are omitted
+because the country-level estimate lies at the boundary of the
+parameter space, where asymptotic approximations are unreliable. The
+exponentiated values are shown for consistency in column formatting.*
